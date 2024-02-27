@@ -1,4 +1,3 @@
-S->FaD
 S->GE|aB|BB|FaD
 A->C|[EPS]|BS|ab|bA
 B->SS|EG|b|D

@@ -1,10 +1,2 @@
 ﻿  CF_Grammar.cpp
-F:\Projects\VisualStudio\CF_Grammar_Equivalence\CF_Grammar_Equivalence\CF_Grammar.cpp(32,42): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
-F:\Projects\VisualStudio\CF_Grammar_Equivalence\CF_Grammar_Equivalence\CF_Grammar.cpp(38,32): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
-F:\Projects\VisualStudio\CF_Grammar_Equivalence\CF_Grammar_Equivalence\CF_Grammar.cpp(79,15): warning C4267: инициализация: преобразование из "size_t" в "int"; возможна потеря данных
-F:\Projects\VisualStudio\CF_Grammar_Equivalence\CF_Grammar_Equivalence\CF_Grammar.cpp(93,48): warning C4267: +=: преобразование из "size_t" в "int"; возможна потеря данных
-F:\Projects\VisualStudio\CF_Grammar_Equivalence\CF_Grammar_Equivalence\CF_Grammar.cpp(200,106): warning C4267: +=: преобразование из "size_t" в "int"; возможна потеря данных
-  Main_File.cpp
-F:\Projects\VisualStudio\CF_Grammar_Equivalence\CF_Grammar_Equivalence\Main_File.cpp(5,12): warning C4244: аргумент: преобразование "time_t" в "unsigned int", возможна потеря данных
-  Создание кода...
-  CF_Grammar_Equivalence.vcxproj -> F:\Projects\VisualStudio\CF_Grammar_Equivalence\x64\Debug\CF_Grammar_Equivalence.exe
+  CF_Grammar_Equivalence.vcxproj -> F:\Projects\VisualStudio\CourseWork23-24\CF_Grammar_Equivalence\x64\Debug\CF_Grammar_Equivalence.exe

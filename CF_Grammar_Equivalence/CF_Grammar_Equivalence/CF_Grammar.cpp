@@ -18,7 +18,7 @@ void CF_Grammar::ReadFromFile(const std::string& File_Name)
 	std::string current_string;
 	std::string sub_string;
 	Rule current_rule;
-	int position;
+	size_t position;
 
 	while (true)
 	{
@@ -26,7 +26,7 @@ void CF_Grammar::ReadFromFile(const std::string& File_Name)
 
 		if (current_char == '\n' || file.eof())
 		{
-			//if string contaits '|' add multiple rules
+			// ƒобавить несколько правил, если они написаны через '|'
 			if (current_string.find('|') != std::string::npos)
 			{
 				position = current_string.find("->") + 2;
@@ -70,20 +70,21 @@ void CF_Grammar::ReadFromFile(const std::string& File_Name)
 	}
 
 	file.close();
+	GeneratePathes();
 }
 
 Rule CF_Grammar::GetRuleFromString(const std::string& String)
 {
 	Rule result;
 	std::string current_string;
-	int position = String.find("->");
+	size_t position = String.find("->");
 	result.left_part = String.substr(0, position);
 	current_string = String.substr(position + 2);
 
 	if (starting_non_terminal.length() == 0)
 		starting_non_terminal = result.left_part;
 
-	int i_char = 0;
+	size_t i_char = 0;
 
 	while (true)
 	{
@@ -105,6 +106,7 @@ Rule CF_Grammar::GetRuleFromString(const std::string& String)
 void CF_Grammar::AddRule(const Rule& New_Rule)
 {
 	Rule rule_to_add = New_Rule;
+	std::vector<Path> null_path;
 
 	if (!non_terminals.contains(New_Rule.left_part))
 	{
@@ -133,20 +135,201 @@ void CF_Grammar::AddRule(const Rule& New_Rule)
 	rules.push_back(rule_to_add);
 }
 
+void CF_Grammar::GeneratePathes()
+{
+	Path current_path;
+	bool got_wrong_non_terminal = false;
+	bool non_terminal_found = false;
+	bool good_non_terminal = false;
+
+	// Ќайти правила, права€ часть которых состоит из терминалов
+	for (Rule i_rule : rules)
+	{
+		got_wrong_non_terminal = false;
+		for (std::string i_string : i_rule.right_part)
+		{
+			// ¬ правой части содержитс€ нетерминал, из которого пока нельз€ вывести слово
+			if (non_terminals.contains(i_string))
+			{
+				got_wrong_non_terminal = true;
+				break;
+			}
+		}
+		// ƒобавл€ем правило в путь
+		if (!got_wrong_non_terminal)
+		{
+			current_path.path_rules.emplace(current_path.path_rules.begin(), i_rule);
+			current_path.length++;
+			current_path.word = i_rule.right_part;
+
+			non_terminals[i_rule.left_part].push_back(current_path);
+
+			current_path.length = 0;
+			current_path.path_rules.clear();
+		}
+		i_rule.~Rule();
+	}
+
+	GenerateSubPathes();
+
+	FindingBadNonTerminals();
+}
+
+void CF_Grammar::GenerateSubPathes()
+{
+	Path current_path;
+	std::map<std::string, std::vector<Path>> new_pathes = non_terminals;
+	bool new_pathes_found = false;
+
+	for (Rule i_rule : rules)
+	{
+		for (std::string i_string : i_rule.right_part)
+		{
+			if (non_terminals.contains(i_string) && i_string != i_rule.left_part && new_pathes[i_string].size() > 0)
+			{
+				for (Path i_path : new_pathes[i_string])
+				{
+					if (i_path.length > 0 && !GotNonTerminal(i_path))
+					{
+						// —оставление нового пути
+						current_path.length = 1;
+						current_path.path_rules.push_back(i_rule);
+						current_path.word = i_rule.right_part;
+						current_path += i_path;
+
+						// ƒобавить путь, если такого еще нет
+						if (std::find(new_pathes[i_rule.left_part].begin(), new_pathes[i_rule.left_part].end(), current_path) == new_pathes[i_rule.left_part].end())
+						{
+							new_pathes[i_rule.left_part].push_back(current_path);
+							new_pathes_found = true;
+						}
+						current_path.~Path();
+					}
+				}
+				break;
+			}
+		}
+	}
+
+	non_terminals = new_pathes;
+
+	if (new_pathes_found)
+		GenerateFinalPathes();
+}
+
+void CF_Grammar::GenerateFinalPathes()
+{
+	Path current_path;
+	std::map<std::string, std::vector<Path>> new_pathes = non_terminals;
+	bool new_pathes_found = false;
+
+	for (auto& i_element : non_terminals)
+	{
+		for (Path i_path : i_element.second)
+		{
+			for (std::string i_string : i_path.word)
+			{
+				if (non_terminals.contains(i_string) && new_pathes[i_string].size() > 0)
+				{
+					for (Path j_path : new_pathes[i_string])
+					{
+						if (j_path.length > 0 && !GotNonTerminal(j_path))
+						{
+							// —оставление нового пути
+							current_path = i_path;
+							current_path += j_path;
+
+							// ≈сли такого пути еще нет, то добавить
+							if (std::find(new_pathes[i_element.first].begin(), new_pathes[i_element.first].end(), current_path) == new_pathes[i_element.first].end())
+							{
+								new_pathes[i_element.first].erase(std::remove(new_pathes[i_element.first].begin(), new_pathes[i_element.first].end(), i_path), new_pathes[i_element.first].end());
+								new_pathes[i_element.first].push_back(current_path);
+								new_pathes_found = true;
+							}
+							current_path.~Path();
+						}
+					}
+					break;
+				}
+			}
+		}
+	}
+
+	non_terminals = new_pathes;
+
+	// ≈сли были добавлены новые пути, то запустить снова
+	if (new_pathes_found)
+		GenerateFinalPathes();
+}
+
+void CF_Grammar::FindingBadNonTerminals()
+{
+	bool good_non_terminal = false;
+	bool non_terminal_found = false;
+
+	for (auto& i_element : non_terminals)
+	{
+		good_non_terminal = false;
+
+		for (Path i_path : i_element.second)
+		{
+			non_terminal_found = false;
+			for (std::string i_string : i_path.word)
+			{
+				if (non_terminals.contains(i_string))
+				{
+					non_terminal_found = true;
+					break;
+				}
+			}
+			if (!non_terminal_found)
+			{
+				good_non_terminal = true;
+				break;
+			}
+		}
+		if (!good_non_terminal)
+		{
+			bad_non_terminals.insert(i_element.first);
+		}
+	}
+}
+
+bool CF_Grammar::GotNonTerminal(const Path& Current_Path)
+{
+	for (std::string i_string : Current_Path.word)
+	{
+		if (non_terminals.contains(i_string))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 void CF_Grammar::PrintGrammar()
 {
+	int counter = 0;
+
 	std::cout << "Grammar:" << std::endl;
 	std::cout << "Non-Terminals:" << std::endl;
 
 	for(const auto& i_element: non_terminals)
 	{
-		std::cout << i_element.first << ",";
+		std::cout << i_element.first;
+		if (counter != non_terminals.size() - 1)
+			std::cout << ", ";
+		counter++;
 	}
 
+	counter = 0;
 	std::cout << std::endl << "Terminals:" << std::endl;
 	for (std::string i_string : terminals)
 	{
-		std::cout << i_string << ",";
+		std::cout << i_string;
+		if (counter != terminals.size() - 1)
+			std::cout << ", ";
+		counter++;
 	}
 
 	std::cout << std::endl << "Rules:" << std::endl;
@@ -159,6 +342,31 @@ void CF_Grammar::PrintGrammar()
 		}
 		std::cout << "           || terminals_count: " << i_rule.terminals_count << std::endl;
 	}
+
+	std::cout << "Pathes:" << std::endl;
+	for (const auto& i_element : non_terminals)
+	{
+		for (Path i_path : i_element.second)
+		{
+			i_path.PrintPath();
+		}
+	}
+
+	counter = 0;
+	std::cout << "Bad non-terminals";
+	if (bad_non_terminals.size() > 0)
+	{
+		std::cout << ": ";
+		for (std::string i_string : bad_non_terminals)
+		{
+			std::cout << i_string;
+			if (counter != bad_non_terminals.size() - 1)
+				std::cout << ", ";
+			counter++;
+		}
+		std::cout << std::endl;
+	}
+	else std::cout << " not found" << std::endl;
 }
 
 std::string CF_Grammar::GenerateWord(const int& Min_Length)
@@ -168,7 +376,7 @@ std::string CF_Grammar::GenerateWord(const int& Min_Length)
 	std::vector<Rule> appliable_rules;
 	std::vector<std::string> non_terminal_list;
 	std::vector<std::string>::iterator iterator;
-	int replaceable_non_terminals = 1;
+	size_t replaceable_non_terminals = 1;
 	int non_terminal_to_replace = 0;
 	int rule_to_use = 0;
 	int expected_length = 0;
@@ -248,7 +456,7 @@ std::string CF_Grammar::GenerateWord(const int& Min_Length)
 	return std::string();
 }
 
-std::vector<std::string> CF_Grammar::ApplyRule(const std::vector<std::string>& String, const Rule& Rule, const int& Non_Terminal_Number)
+std::vector<std::string> ApplyRule(const std::vector<std::string>& String, const Rule& Rule, const int& Non_Terminal_Number)
 {
 	std::vector<std::string> result = String;
 	std::vector<std::string> replace_string;
@@ -270,7 +478,7 @@ std::vector<std::string> CF_Grammar::ApplyRule(const std::vector<std::string>& S
 	}
 
 	// ¬ставка строки-замены на место нетерминала
-	result.erase(position);
+	position = result.erase(position);
 	for (std::string i_string : replace_string)
 	{
 		position = result.emplace(position, i_string);
@@ -279,6 +487,7 @@ std::vector<std::string> CF_Grammar::ApplyRule(const std::vector<std::string>& S
 
 	return result;
 }
+
 /*
 int CF_Grammar::min_element(const std::vector<Path, std::allocator<Path>>& Obj)
 {
@@ -301,6 +510,15 @@ bool CF_Grammar::EarleyAlg(const std::vector<std::string>& Word)
 	return false;
 }
 
+bool Rule::operator==(const Rule& Object)
+{
+	if (this->left_part != Object.left_part) return false;
+	if (this->right_part.size() != Object.right_part.size()) return false;
+	if (this->right_part != Object.right_part) return false;
+
+	return true;
+}
+
 Rule::Rule()
 {
 	terminals_count = 0;
@@ -312,6 +530,53 @@ Rule::~Rule()
 	right_part.clear();
 }
 
+bool Path::operator==(const Path& Object)
+{
+	if (this->length != Object.length) return false;
+	if (this->path_rules.size() != Object.path_rules.size()) return false;
+	for (int i = 0; i < path_rules.size(); i++)
+	{
+		if (this->path_rules[i] != Object.path_rules[i]) return false;
+	}
+
+	return true;
+}
+
+bool Path::operator+=(const Path& Object)
+{
+	Path new_path;
+	new_path = *this;
+	length += Object.length - 1;
+	for (Rule i_rule : Object.path_rules)
+	{
+		new_path.path_rules.push_back(i_rule);
+		path_rules.clear();
+		path_rules = new_path.path_rules;
+		new_path.word = ApplyRule(new_path.word, i_rule, 0);
+	}
+	word = new_path.word;
+
+	return true;
+}
+
+void Path::PrintPath()
+{
+	std::vector<std::string> word;
+	std::cout << path_rules[0].left_part << " -> ";
+	word.push_back(path_rules[0].left_part);
+	for (int i = 0; i < path_rules.size(); i++)
+	{
+		word = ApplyRule(word, path_rules[i], 0);
+		for (std::string i_string : word)
+		{
+			std::cout << i_string;
+		}
+		if (i != path_rules.size() - 1)
+			std::cout << " -> ";
+	}
+	std::cout << std::endl;
+}
+
 Path::Path()
 {
 	length = 0;
@@ -321,4 +586,5 @@ Path::~Path()
 {
 	length = 0;
 	path_rules.clear();
+	word.clear();
 }
