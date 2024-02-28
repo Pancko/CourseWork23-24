@@ -1,3 +1,5 @@
+// ТВГУ ПМиК ФИиИТ 2024
+// Андреев Семен Витальевич
 #pragma once
 #include <iostream>
 #include <iomanip>
@@ -31,7 +33,7 @@ struct Path
 	bool operator==(const Path& Object);
 	bool operator+=(const Path& Object);
 
-	void PrintPath();
+	void PrintPath(bool IsDebug = false);
 
 	Path();
 	~Path();
@@ -42,7 +44,7 @@ class CF_Grammar
 private:
 	std::string starting_non_terminal; // S
 	std::map<std::string, std::vector<Path>> non_terminals; //N
-	std::map<std::string, int> shortest_path;
+	std::map<std::string, Path> shortest_path;
 	std::set<std::string> bad_non_terminals;
 	std::set<std::string> terminals; //Sigma
 	std::vector<Rule> rules; //P
@@ -65,22 +67,28 @@ public:
 	// Генерация путей. Доведение всех полученных путей до полностью терминальных слов (если возможно)
 	void GenerateFinalPathes();
 
-	// Вычисление и пометка плохих нетерминалов (из которых невозможно вывести полностью терминальное слово)
+
+	// Вычисление и пометка "плохих" нетерминалов (из которых невозможно вывести полностью терминальное слово)
 	void FindingBadNonTerminals();
+	// Удаление "плохих" нетерминалов
+	void DeleteBadNonTerminals();
+	// Заполнение вектора кратчайших путей для использования в генерации
+	void FillShortestPathes();
 
 	// Проверка наличия нетерминала в конце пути
 	bool GotNonTerminal(const Path& Current_Path);
+	// Проверка наличия нетерминала в слове
+	bool GotNonTerminal(const std::vector<std::string>& Word);
 
 	// Вывод грамматики в консоль
-	void PrintGrammar();
+	void PrintGrammar(bool IsDebug = false, bool ShowPath = false);
 
-	std::string GenerateWord(const int& Min_Length);
-
-
-	//int min_element(const std::vector<Path, std::allocator<Path>>& Obj);
+	// Генерация случайного терминального слова
+	std::string GenerateWord(const int& Max_Length);
 
 	bool KYCAlg(const std::vector<std::string>& Word);
 	bool EarleyAlg(const std::vector<std::string>& Word);
 };
 
-	std::vector<std::string> ApplyRule(const std::vector<std::string>& String, const Rule& Rule, const int& Non_Terminal_Number);
+// Применение правила к слову
+std::vector<std::string> ApplyRule(const std::vector<std::string>& String, const Rule& Rule, const int& Non_Terminal_Number = 0);

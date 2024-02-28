@@ -1,3 +1,5 @@
+// ТВГУ ПМиК ФИиИТ 2024
+// Андреев Семен Витальевич
 #include "CF_Grammar.h"
 
 int main()
@@ -10,11 +12,25 @@ int main()
 	CF_Grammar grammar1;
 	CF_Grammar grammar2;
 
+	std::string word;
+	bool IsDebug = 0;
+
 	grammar1.ReadFromFile(Filename1);
-	grammar1.PrintGrammar();
+	grammar1.PrintGrammar(IsDebug);
+
+	for (int i = 0; i < 30; i++)
+	{
+		word = grammar1.GenerateWord(100);
+		std::cout << "word = " << word << ", length = " << word.length() << std::endl;
+	}
 
 	grammar2.ReadFromFile(Filename2);
-	grammar2.PrintGrammar();
+	grammar2.PrintGrammar(IsDebug);
 
+	for (int i = 0; i < 30; i++)
+	{
+		word = grammar2.GenerateWord(100);
+		std::cout << "word = " << word << ", length = " << word.length() << std::endl;
+	}
 	return 0;
 }
