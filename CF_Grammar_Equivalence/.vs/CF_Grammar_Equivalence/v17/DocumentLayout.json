@@ -3,16 +3,20 @@
   "WorkspaceRootPath": "F:\\Projects\\VisualStudio\\CourseWork23-24\\CF_Grammar_Equivalence\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{AC539B56-B1F4-4975-AB46-2D74E0128B97}|CF_Grammar_Equivalence\\CF_Grammar_Equivalence.vcxproj|F:\\Projects\\VisualStudio\\CourseWork23-24\\CF_Grammar_Equivalence\\CF_Grammar_Equivalence\\CF_Grammar.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{AC539B56-B1F4-4975-AB46-2D74E0128B97}|CF_Grammar_Equivalence\\CF_Grammar_Equivalence.vcxproj|solutionrelative:CF_Grammar_Equivalence\\CF_Grammar.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{AC539B56-B1F4-4975-AB46-2D74E0128B97}|CF_Grammar_Equivalence\\CF_Grammar_Equivalence.vcxproj|F:\\Projects\\VisualStudio\\CourseWork23-24\\CF_Grammar_Equivalence\\CF_Grammar_Equivalence\\Main_File.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{AC539B56-B1F4-4975-AB46-2D74E0128B97}|CF_Grammar_Equivalence\\CF_Grammar_Equivalence.vcxproj|solutionrelative:CF_Grammar_Equivalence\\Main_File.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{AC539B56-B1F4-4975-AB46-2D74E0128B97}|CF_Grammar_Equivalence\\CF_Grammar_Equivalence.vcxproj|F:\\Projects\\VisualStudio\\CourseWork23-24\\CF_Grammar_Equivalence\\CF_Grammar_Equivalence\\CF_Grammar.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{AC539B56-B1F4-4975-AB46-2D74E0128B97}|CF_Grammar_Equivalence\\CF_Grammar_Equivalence.vcxproj|solutionrelative:CF_Grammar_Equivalence\\CF_Grammar.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{AC539B56-B1F4-4975-AB46-2D74E0128B97}|CF_Grammar_Equivalence\\CF_Grammar_Equivalence.vcxproj|F:\\Projects\\VisualStudio\\CourseWork23-24\\CF_Grammar_Equivalence\\CF_Grammar_Equivalence\\Main_File.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{AC539B56-B1F4-4975-AB46-2D74E0128B97}|CF_Grammar_Equivalence\\CF_Grammar_Equivalence.vcxproj|solutionrelative:CF_Grammar_Equivalence\\Main_File.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{AC539B56-B1F4-4975-AB46-2D74E0128B97}|CF_Grammar_Equivalence\\CF_Grammar_Equivalence.vcxproj|F:\\Projects\\VisualStudio\\CourseWork23-24\\CF_Grammar_Equivalence\\CF_Grammar_Equivalence\\CF_Grammar.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{AC539B56-B1F4-4975-AB46-2D74E0128B97}|CF_Grammar_Equivalence\\CF_Grammar_Equivalence.vcxproj|solutionrelative:CF_Grammar_Equivalence\\CF_Grammar.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC539B56-B1F4-4975-AB46-2D74E0128B97}|CF_Grammar_Equivalence\\CF_Grammar_Equivalence.vcxproj|F:\\Projects\\VisualStudio\\CourseWork23-24\\CF_Grammar_Equivalence\\CF_Grammar_Equivalence\\Timer.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{AC539B56-B1F4-4975-AB46-2D74E0128B97}|CF_Grammar_Equivalence\\CF_Grammar_Equivalence.vcxproj|solutionrelative:CF_Grammar_Equivalence\\Timer.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
   "DocumentGroupContainers": [
@@ -22,17 +26,30 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 3,
+              "Title": "Timer.h",
+              "DocumentMoniker": "F:\\Projects\\VisualStudio\\CourseWork23-24\\CF_Grammar_Equivalence\\CF_Grammar_Equivalence\\Timer.h",
+              "RelativeDocumentMoniker": "CF_Grammar_Equivalence\\Timer.h",
+              "ToolTip": "F:\\Projects\\VisualStudio\\CourseWork23-24\\CF_Grammar_Equivalence\\CF_Grammar_Equivalence\\Timer.h",
+              "RelativeToolTip": "CF_Grammar_Equivalence\\Timer.h",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAoAAAA+AAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2024-03-02T07:09:16.006Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
               "Title": "CF_Grammar.h",
               "DocumentMoniker": "F:\\Projects\\VisualStudio\\CourseWork23-24\\CF_Grammar_Equivalence\\CF_Grammar_Equivalence\\CF_Grammar.h",
               "RelativeDocumentMoniker": "CF_Grammar_Equivalence\\CF_Grammar.h",
               "ToolTip": "F:\\Projects\\VisualStudio\\CourseWork23-24\\CF_Grammar_Equivalence\\CF_Grammar_Equivalence\\CF_Grammar.h",
               "RelativeToolTip": "CF_Grammar_Equivalence\\CF_Grammar.h",
-              "ViewState": "AQIAADkAAAAAAAAAAAAAAFYAAAAoAAAA",
+              "ViewState": "AQIAAAMAAAAAAAAAAAAAAC0AAAATAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
               "WhenOpened": "2024-02-22T16:25:37.361Z",
               "EditorCaption": ""
@@ -45,22 +62,23 @@
               "RelativeDocumentMoniker": "CF_Grammar_Equivalence\\CF_Grammar.cpp",
               "ToolTip": "F:\\Projects\\VisualStudio\\CourseWork23-24\\CF_Grammar_Equivalence\\CF_Grammar_Equivalence\\CF_Grammar.cpp",
               "RelativeToolTip": "CF_Grammar_Equivalence\\CF_Grammar.cpp",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAAPgBAAAzAAAA",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAIAAAAXAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-02-22T16:25:32.949Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
               "Title": "Main_File.cpp",
               "DocumentMoniker": "F:\\Projects\\VisualStudio\\CourseWork23-24\\CF_Grammar_Equivalence\\CF_Grammar_Equivalence\\Main_File.cpp",
               "RelativeDocumentMoniker": "CF_Grammar_Equivalence\\Main_File.cpp",
               "ToolTip": "F:\\Projects\\VisualStudio\\CourseWork23-24\\CF_Grammar_Equivalence\\CF_Grammar_Equivalence\\Main_File.cpp",
               "RelativeToolTip": "CF_Grammar_Equivalence\\Main_File.cpp",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAcAAAAAAAAA",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAABAAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2024-02-22T16:25:34.45Z"
+              "WhenOpened": "2024-02-22T16:25:34.45Z",
+              "EditorCaption": ""
             }
           ]
         }
