@@ -11,6 +11,7 @@
 #include <map>
 #include <fstream>
 #include <algorithm>
+#include "Timer.h"
 
 // Правило из КС-грамматики
 struct Rule
@@ -20,6 +21,8 @@ struct Rule
 	size_t terminals_count = 0;				// Счетчик терминалов
 
 	bool operator==(const Rule& Object) const;
+
+	bool operator<(const Rule& Object) const;
 
 	Rule();
 	Rule(std::string Left_Part, std::vector<std::string> Right_Part);
@@ -36,11 +39,19 @@ struct Path
 
 	bool operator==(const Path& Object) const;
 	bool operator+=(const Path& Object);
+	Path ApplyPath(const Path& Object, const int& position = 0);
 
 	void PrintPath(bool IsDebug = false);
 
 	Path();
 	~Path();
+};
+
+// Подстановка всех возможных терминальных слов в каждый нетерминал правила (Для таблицы динамического программирования)
+struct PathPermutations
+{
+	Rule rule;
+	std::vector<std::pair<std::string, std::vector<std::string>>> right_part;
 };
 
 // Основной класс - КС-грамматика
@@ -53,7 +64,7 @@ private:
 	std::set<std::string> bad_non_terminals;				// "Плохие" нетерминалы
 	std::set<std::string> terminals;						// Sigma
 	std::vector<Rule> rules;								// P
-
+	int pathes_amount = 0;
 	std::set<std::string> words;							// Сгенерированныые слова
 
 public:
@@ -73,9 +84,11 @@ public:
 	// Полная генерация путей.
 	void GeneratePathes();
 	// Генерация путей, доведение всех правил до терминальных слов
-	bool GenerateSubPath(const Path& Current_Path);
+	std::map<std::string, std::vector<Path>> GenerateSubPath(const Path& Current_Path);
 	// Проверка пути на уникальность
-	bool IsUniquePath(const Path& Path_To_Check, std::map<std::string, std::vector<Path>> Current_Pathes);
+	bool IsUniquePath(const Path& Path_To_Check, const std::map<std::string, std::vector<Path>>& Current_Pathes);
+	// Проверка правой части правила на удовлетворение условиям создания нового пути
+	bool IsRuleViable(const Rule& Current_Rule, const std::map<std::string, std::vector<Path>>& Non_Terminals);
 
 
 	// Вычисление и пометка "плохих" нетерминалов (из которых невозможно вывести полностью терминальное слово)
@@ -111,9 +124,13 @@ public:
 
 	// Алгоритм Кока-Янгера-Касами, модификация для произвольной грамматики
 	bool CYK_Alg(const std::string& Word);
-	// Вспомогательные функции алгоритма Кока-Янгера-Касами
-	bool a(const std::string& Non_Terminal, const int& I, const int& J);
-	bool h(const std::string& Word, const Rule& Rule, const int& I, const int& J, const int& K);
+	// Вспомогательные функции для алгоритмов
+	int IndexOfNonTerminal(const std::string& Non_Terminal);
+	int IndexOfRule(const Rule& Current_Rule);
+	std::string VectorToString(const std::vector<std::string>& Object);
+
+
+	std::vector<Rule> NonTerminalRules(const std::string& Non_Terminal);
 
 	// Алгоритм Эрли
 	bool EarleyAlg(const std::vector<std::string>& Word);
@@ -121,3 +138,7 @@ public:
 
 // Применение правила к слову
 std::vector<std::string> ApplyRule(const std::vector<std::string>& String, const Rule& Rule, const int& Non_Terminal_Number = 0);
+// Совмещение двух наборов правил
+std::map<std::string, std::vector<Path>> PathConvergence(const std::map<std::string, std::vector<Path>>& First_Object, const std::map<std::string, std::vector<Path>>& Second_Object);
+// Содержится ли строка в векторе
+bool VecContStr(const std::vector<std::string>& Vector, const std::string& String);

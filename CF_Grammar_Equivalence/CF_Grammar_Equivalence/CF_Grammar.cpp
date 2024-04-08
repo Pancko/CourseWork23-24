@@ -96,7 +96,6 @@ Rule CF_Grammar::GetRuleFromString(const std::string& String)
 void CF_Grammar::AddRule(const Rule& New_Rule)
 {
 	Rule rule_to_add = New_Rule;
-	std::vector<Path> null_path;
 
 	if (!non_terminals.contains(New_Rule.left_part))
 	{
@@ -140,115 +139,179 @@ void CF_Grammar::AnalyzeNonTerminals()
 void CF_Grammar::GeneratePathes()
 {
 	Path current_path;
-	bool got_wrong_non_terminal;
-	size_t searching_range = 3;//std::max(2, int(non_terminals.size() / 3));
+	std::vector<PathPermutations> pathes;
+	std::map<std::string, std::vector<Path>> new_found_pathes;
+	std::map<std::string, std::vector<Path>> current_new_found_pathes;
+	std::string temp_str;
+	int position = 0;
 
-	// Базис: заносим правила, которые уже создают терминальные слова
-	for (Rule i_rule : rules)
+	for (Rule i_rule : rules) // Базис. Заполнить массив правил
 	{
-		// Добавляем правило в путь
-		if (!GotNonTerminal(i_rule.right_part))
+		pathes.push_back(PathPermutations(i_rule));
+		for (std::string i_string : i_rule.right_part)
+			pathes[IndexOfRule(i_rule)].right_part.push_back(std::map<std::string, std::vector<std::string>>::value_type(i_string, NULL));
+		if (!GotNonTerminal(i_rule.right_part)) // Если правило порождает нетерминальное слово
 		{
+			if (!new_found_pathes.contains(i_rule.left_part))
+				new_found_pathes.emplace(std::map<std::string, std::vector<Path>>::value_type(i_rule.left_part, NULL));
 			if (i_rule.right_part[0] == "[EPS]")
 				current_path.length = 0;
 			else
+			{
+				current_path.word = i_rule.right_part;
 				current_path.length = 1;
+			}
 			current_path.path_words.push_back(std::vector<std::string>({ i_rule.left_part }));
 			current_path.path_rules.emplace(current_path.path_rules.begin(), i_rule);
-			current_path.word = i_rule.right_part;
 			current_path.path_words.push_back(current_path.word);
 
 			non_terminals[i_rule.left_part].push_back(current_path);
+			pathes_amount++;
+
+			new_found_pathes[i_rule.left_part].push_back(current_path);
 
 			current_path.path_rules.clear();
 			current_path.path_words.clear();
+			current_path.word.clear();
 		}
-		i_rule.~Rule();
 	}
-
-	// Рекуррентный шаг: применяем к правилам пути, приводящие к терминальным словам
-	for (int i = 0; i < searching_range; i++)
+	int i = 1;
+	Timer t;
+	while (new_found_pathes.size() > 0) // Рекуррентный шаг, создаем пути пока находим новые
 	{
-		std::cout << "Generating pathes " << i * (100 / searching_range) << " ~ " << (i + 1) * (100 / searching_range) << "%" << std::endl;
+		std::cout << "Generating pathes step " << i << ", found new pathes for non-terminals: ";
+
+		for (auto& i_element : new_found_pathes)
+		{
+			std::cout << i_element.first << ", ";
+		}
+		t.reset();
+
 		for (Rule i_rule : rules)
 		{
-			got_wrong_non_terminal = false;
-			for (std::string i_string : i_rule.right_part)
+			if (IsRuleViable(i_rule, new_found_pathes))
 			{
-				if (i_string == i_rule.left_part)
+				position = 0;
+				for (std::string i_string : i_rule.right_part)
 				{
-					got_wrong_non_terminal = true;
-					break;
+					if (new_found_pathes.contains(i_string))
+					{
+						for (Path i_path : new_found_pathes[i_string])
+						{
+							temp_str.clear();
+							for (std::string word_str : i_path.word)
+								temp_str += word_str;
+
+							if (!VecContStr(pathes[IndexOfRule(i_rule)].right_part[position].second, temp_str)) // Если такой путь еще не был применен к нетерминалу
+							{
+								current_path.length = 1;
+								current_path.path_rules.push_back(i_rule);
+								current_path.path_words.push_back(std::vector<std::string>({ i_rule.left_part }));
+								current_path.path_words.push_back(i_rule.right_part);
+								current_path.word = i_rule.right_part;
+
+								current_path = current_path.ApplyPath(i_path, position);
+
+								if (IsUniquePath(current_path, non_terminals))
+								{
+									pathes[IndexOfRule(i_rule)].right_part[position].second.push_back(temp_str); // Добавляем новый вариант в таблицу
+									if (GotNonTerminal(current_path)) // Генерируем новые пути
+										current_new_found_pathes = PathConvergence(current_new_found_pathes, GenerateSubPath(current_path));
+									else
+									{
+										non_terminals[i_rule.left_part].push_back(current_path);
+										pathes_amount++;
+										if (!current_new_found_pathes.contains(i_rule.left_part))
+											current_new_found_pathes.emplace(std::map<std::string, std::vector<Path>>::value_type(i_rule.left_part, NULL));
+										current_new_found_pathes[i_rule.left_part].push_back(current_path);
+									}
+								}
+
+								current_path.path_rules.clear();
+								current_path.path_words.clear();
+								current_path.word.clear();
+							}
+						}
+					}
+					position++;
 				}
-				if (non_terminals.contains(i_string) && non_terminals[i_string].size() == 0)
-				{
-					got_wrong_non_terminal = true;
-					break;
-				}
-			}
-
-			if (!got_wrong_non_terminal && GotNonTerminal(i_rule.right_part))
-			{
-				current_path.length = 1;
-				current_path.path_rules.push_back(i_rule);
-				current_path.path_words.push_back(std::vector<std::string>({ i_rule.left_part }));
-				current_path.path_words.push_back(i_rule.right_part);
-				current_path.word = i_rule.right_part;
-
-				if (GotNonTerminal(current_path))
-					GenerateSubPath(current_path);
-
-				current_path.path_rules.clear();
-				current_path.path_words.clear();
 			}
 		}
+
+		new_found_pathes.clear();
+		new_found_pathes = current_new_found_pathes;
+		int count = 0;
+		for (auto& i_element : new_found_pathes)
+		{
+			count += (int)i_element.second.size();
+		}
+		current_new_found_pathes.clear();
+		i++;
+		std::cout << "time elapsed = " << t.elapsed() << ", new pathes = " << count << std::endl;
 	}
 }
 
-bool CF_Grammar::GenerateSubPath(const Path& Current_Path)
+std::map<std::string, std::vector<Path>> CF_Grammar::GenerateSubPath(const Path& Current_Path)
 {
-	Path current_path = Current_Path;
+	std::map<std::string, std::vector<Path>> result;
+	Path current_path;
 	std::map<std::string, std::vector<Path>> old_pathes = non_terminals;
-	bool new_path_found = false;
-
-	for (std::string i_string : Current_Path.word)
+	for (std::string i_string : Current_Path.word)      // Рассматриваем символы в слове
 	{
-		if (old_pathes.contains(i_string))
+		if (non_terminals.contains(i_string))           // Если символ является нетерминалом
 		{
-			for (Path i_path : old_pathes[i_string])
+			for (Path i_path : old_pathes[i_string]) // Пути этого нетерминала
 			{
 				current_path = Current_Path;
 				current_path += i_path;
-
-				if (GotNonTerminal(current_path))
+				if (IsUniquePath(current_path, non_terminals))
 				{
-					new_path_found += GenerateSubPath(current_path);
-				}
-				else if (IsUniquePath(current_path, non_terminals))
-				{
-					non_terminals[current_path.path_rules[0].left_part].push_back(current_path);
-					new_path_found = true;
+					if (GotNonTerminal(current_path))
+						result = PathConvergence(result, GenerateSubPath(current_path));
+					else
+					{
+						result.emplace(std::map<std::string, std::vector<Path>>::value_type(current_path.path_rules[0].left_part, NULL));
+						result[current_path.path_rules[0].left_part].push_back(current_path);
+						non_terminals[current_path.path_rules[0].left_part].push_back(current_path);
+						pathes_amount++;
+					}
 				}
 			}
 		}
 	}
-
-	return new_path_found;
-
+	return result;
 }
 
-bool CF_Grammar::IsUniquePath(const Path& Path_To_Check, std::map<std::string, std::vector<Path>> Current_Pathes)
+bool CF_Grammar::IsRuleViable(const Rule& Current_Rule, const std::map<std::string, std::vector<Path>>& Non_Terminals)
 {
+	bool found_viable_non_terminal = false;
+	std::map<std::string, std::vector<Path>> current_non_terminals = Non_Terminals;
+
+	for (std::string i_string : Current_Rule.right_part)
+	{
+		if (i_string == Current_Rule.left_part) return false; // В правой части правила содержится тот же нетерминал (цикл)
+
+		if (current_non_terminals.contains(i_string) && current_non_terminals[i_string].size() == 0) return false; // Нетерминал, у которого нет путей
+
+		if (current_non_terminals.contains(i_string)) found_viable_non_terminal = true; // Подходящий нетерминал
+	}
+
+	return found_viable_non_terminal;
+}
+
+bool CF_Grammar::IsUniquePath(const Path& Path_To_Check, const std::map<std::string, std::vector<Path>>& Current_Pathes)
+{
+	std::map<std::string, std::vector<Path>> current_pathes = Current_Pathes;
 	// Если путь с таким заключительным словом уже существует
-	for (Path i_path : Current_Pathes[Path_To_Check.path_rules[0].left_part])
+	for (Path i_path : current_pathes[Path_To_Check.path_rules[0].left_part])
 	{
 		if (i_path.word == Path_To_Check.word) return false;
 	}
 
 	// Если одно и то же правило (кроме опустошающих) применяется больше одного раза
-	for (int i = 0; i < Path_To_Check.path_rules.size(); i++)
+	for (int i = (int)Path_To_Check.path_rules.size() - 1; i >= 0; i--)
 	{
-		for (int j = 0; j < Path_To_Check.path_rules.size(); j++)
+		for (int j = (int)Path_To_Check.path_rules.size() - 1; j >= 0; j--)
 		{
 			if (i != j && Path_To_Check.path_rules[i] == Path_To_Check.path_rules[j]
 				&& Path_To_Check.path_rules[i].right_part[0] != "[EPS]") return false;
@@ -295,7 +358,7 @@ void CF_Grammar::FindingBadNonTerminals()
 
 void CF_Grammar::DeleteBadNonTerminals()
 {
-	auto new_non_terminals = non_terminals;
+	std::map<std::string, std::vector<Path>> new_non_terminals = non_terminals;
 	std::vector<Rule> new_rules = rules;
 
 	for (std::string i_string : bad_non_terminals)
@@ -449,22 +512,17 @@ void CF_Grammar::PrintGrammar(bool IsDebug, bool ShowPath)
 	}
 	else std::cout << " not found" << std::endl;
 
-	counter = 0;
-
 	if (ShowPath)
 	{
 		std::cout << "Pathes:" << std::endl;
 		for (const auto& i_element : non_terminals)
 		{
 			for (Path i_path : i_element.second)
-			{
 				i_path.PrintPath();
-				counter++;
-			}
 		}
 	}
 
-	std::cout << counter << " pathes" << std::endl;
+	std::cout << pathes_amount << " pathes" << std::endl;
 
 	counter = 0;
 
@@ -605,11 +663,11 @@ bool CF_Grammar::ReGenerateWord(const Path& Word)
 	std::string result_word;
 
 	// Идем в обратном порядке применения правил
-	for (int i = Word.path_rules.size() - 2; i >= 0; --i)
+	for (int i = (int)Word.path_rules.size() - 1; i >= 0; --i)
 	{
-		current_word = Word.path_words[i + 1];
+		current_word = Word.path_words[i];
 		appliable_rules.clear();
-		i_string = Word.path_rules[i + 1].left_part;
+		i_string = Word.path_rules[i].left_part;
 		non_terminal_found = 0;
 		result_word.clear();
 
@@ -619,7 +677,7 @@ bool CF_Grammar::ReGenerateWord(const Path& Word)
 			if (i_rule.left_part == i_string && (!non_terminal_found || GotNonTerminal(i_rule.right_part)))
 			{
 				non_terminal_found = 1;
-				if (i_rule != Word.path_rules[i + 1])
+				if (i_rule != Word.path_rules[i])
 					appliable_rules.push_back(i_rule);
 			}
 			else if (non_terminal_found && i_rule.left_part != i_string) break;
@@ -628,7 +686,7 @@ bool CF_Grammar::ReGenerateWord(const Path& Word)
 		// Попытки применить другие правила и получить новые слова
 		while (appliable_rules.size() > 0)
 		{
-			current_word = Word.path_words[i + 1];
+			current_word = Word.path_words[i];
 			current_word = ApplyRule(current_word, appliable_rules[0]);
 
 			// Доведение слова до конца
@@ -672,10 +730,32 @@ bool CF_Grammar::ReGenerateWord(const Path& Word)
 std::vector<std::string> CF_Grammar::GenerateMultipleWords(const int& Amount, const int& Max_Length)
 {
 	std::vector<std::string> result;
+	int iterations = 0;
+	int words_size;
+	std::string temp_str;
 
 	while (words.size() < Amount)
 	{
+		words_size = (int)words.size();
 		result.push_back(GenerateWord(Max_Length));
+
+		if (words_size == words.size()) iterations++;
+		else iterations = 0;
+		
+		if (iterations > Amount && words.size() < non_terminals[starting_non_terminal].size())
+		{
+			for (Path i_path : non_terminals[starting_non_terminal])
+			{
+				temp_str.clear();
+				for (std::string i_string : i_path.word)
+					temp_str += i_string;
+				if (temp_str == "[EPS]")
+					temp_str = "";
+				if (!words.contains(temp_str))
+					words.insert(temp_str);
+			}
+			break;
+		}
 	}
 
 	return result;
@@ -700,203 +780,277 @@ std::set<std::string> CF_Grammar::GetWords()
 
 bool CF_Grammar::CYK_Alg(const std::string& Word)
 {
-	std::map<std::pair<std::string, std::pair<int, int>>, bool> a;
-	std::map<std::pair<std::pair<std::string, std::vector<std::string>>, std::pair<int, std::pair<int, int>>>, bool> h;
+	bool result = false;
+	bool temp_bool = false;
+	int temp_int = 0;
+	int max_right_part_length = 0;
+	int index_of_rule = 0;
+	int index_of_non_terminal = 0;
 	int j = 0;
-	std::string i_string;
+	std::string temp_str;
+	std::string word = Word;
+	std::vector<Rule> temp_rules;
 
-	std::string test;
+	if (word.size() == 0)
+		word = "[EPS]";
 
-	//std::cout << "Word = " << Word << std::endl;
-
-	for (int i = 0; i <= Word.size(); i++)
+	// a[A][i][j] = true, если из нетерминала А можно вывести подстроку word[i...j - 1]
+	std::vector<std::vector<std::vector<bool>>> a;
+	a.resize(non_terminals.size() + terminals.size());
+	for (int i = 0; i < non_terminals.size() + terminals.size(); i++)
 	{
-		if (Word[0] != '\0' && i == Word.size()) break;
-		i_string = Word[i];
-		//std::cout << "i_string =" << std::distance(i_string.begin(), i_string.end()) << "sss" << std::endl;
-		if (Word[i] == '\0') i_string = "[EPS]";
-		std::cout << "i_string = " << i_string << std::endl;
-		for (Rule i_rule : rules)
+		a[i].resize(2 * word.size());
+		for (int j = 0; j < 2 * word.size(); j++)
+			a[i][j].resize(2 * word.size());
+	}
+
+	for (Rule i_rule : rules)
+	{
+		max_right_part_length = std::max(max_right_part_length, (int)i_rule.right_part.size());
+	}
+
+	// h[A -> alpha][i][j][k] = true, если из префикса длины k правила A -> alpha можно вывести подстроку word[i...j - 1]
+	std::vector<std::vector<std::vector<std::vector<bool>>>> h;
+	h.resize(rules.size());
+	for (int i = 0; i < rules.size(); i++)
+	{
+		h[i].resize(2 * word.size());
+		for (int j = 0; j < 2 * word.size(); j++)
 		{
-			// Если в грамматике присутствует правило A -> Word[i]
-			if ((i_rule.right_part.size() == 1) && (i_rule.right_part[0] == i_string))
-				a[std::pair<std::string, std::pair<int, int>>(i_rule.left_part, std::pair<int, int>(i, i + 1))] = true;
-			//else
-				//if (!a[std::pair<std::string, std::pair<int, int>>(i_rule.left_part, std::pair<int, int>(i, i + 1))])
-					//a[std::pair<std::string, std::pair<int, int>>(i_rule.left_part, std::pair<int, int>(i, i + 1))] = false;
-
-			// Если в грамматике присутствует правило A -> [EPS]
-			if (!GotNonTerminal(i_rule.right_part) && (i_rule.terminals_count == 0))
-				a[std::pair<std::string, std::pair<int, int>>(i_rule.left_part, std::pair<int, int>(i, i))] = true;
-			//else
-				//if (!a[std::pair<std::string, std::pair<int, int>>(i_rule.left_part, std::pair<int, int>(i, i))])
-					//a[std::pair<std::string, std::pair<int, int>>(i_rule.left_part, std::pair<int, int>(i, i))] = false;
-
-			std::cout << "a[" << i_rule.left_part << ", " << i << ", " << i << "] = " << a[std::pair<std::string, std::pair<int, int>>(i_rule.left_part, std::pair<int, int>(i, i))] << std::endl;
-			//std::cout << "right_part[0] = " << i_rule.right_part[0] << std::endl;
-			std::cout << "a[" << i_rule.left_part << ", " << i << ", " << i + 1 << "] = " << a[std::pair<std::string, std::pair<int, int>>(i_rule.left_part, std::pair<int, int>(i, i + 1))] << std::endl;
-
-			h[std::pair<std::pair<std::string, std::vector<std::string>>, std::pair<int, std::pair<int, int>>>
-				(std::pair<std::string, std::vector<std::string>>(i_rule.left_part, i_rule.right_part), std::pair<int, std::pair<int, int>>(i, std::pair<int, int>(i, 0)))] = true;
-			///*
-			test.clear();
-			for (std::string r_string : i_rule.right_part)
-			{
-				test += r_string;
-			}
-
-			std::cout << "h[" << i_rule.left_part << " -> " << test << ", " << i << ", " << i << ", 0] = " <<
-				h[std::pair<std::pair<std::string, std::vector<std::string>>, std::pair<int, std::pair<int, int>>>
-				(std::pair<std::string, std::vector<std::string>>(i_rule.left_part, i_rule.right_part), std::pair<int, std::pair<int, int>>(i, std::pair<int, int>(i, 0)))] << std::endl;//*/
+			h[i][j].resize(2 * word.size());
+			for (int k = 0; k < 2 * word.size(); k++)
+				h[i][j][k].resize(max_right_part_length + 1);
 		}
 	}
-	//std::cout << std::endl << "first" << std::endl;
-	for (int m = 0; m <= Word.size(); m++)
+
+	//for (int i = 0; i < word.size(); i++)
+	//{
+	//	temp_str.clear();
+	//	temp_str += word[i];
+	//	if (word == "[EPS]")
+	//		temp_str = "[EPS]";
+	//	if (temp_str == "[EPS]" && i > 0) break;
+	//	for (Rule i_rule : rules)
+	//	{
+	//		// Если в грамматике присутствует правило A -> w[i] 
+	//		if (i_rule.right_part.size() == 1 && i_rule.right_part[0] == temp_str) a[IndexOfNonTerminal(i_rule.left_part)][i][i + 1] = true;
+
+	//		// Если в грамматике присутствует правило A -> [EPS] 
+	//		if (i_rule.right_part[0] == "[EPS]") a[IndexOfNonTerminal(i_rule.left_part)][i][i] = true;
+
+	//		h[IndexOfRule(i_rule)][i][i][0] = true;
+	//	}
+	//	/*for (auto& i_element : non_terminals)
+	//	{
+	//		std::cout << std::endl << "a[" << i_element.first << "][" << i << "][" << i + 1 << "] = " << a[IndexOfNonTerminal(i_element.first)][i][i + 1] << std::endl;
+	//		std::cout << "a[" << i_element.first << "][" << i << "][" << i << "] = " << a[IndexOfNonTerminal(i_element.first)][i][i] << std::endl;
+	//	}*/
+	//}
+
+	for (int i = 0; i </*=*/ word.size(); i++)
 	{
-		if (Word[0] != '\0' && m == Word.size()) break;
-		for (int i = 0; i <= Word.size(); i++)
+		// Выводимость из нетерминалов
+		for (j = i + 1; j <= word.size(); j++)
 		{
-			if (Word[0] != '\0' && i == Word.size()) break;
-			j = i + m;
-			//for (int k = 0; k <= m; k++)
-			{
-				for (Rule i_rule : rules)
+			temp_str.clear();
+			if (word == "[EPS]")
+				temp_str = "";
+			else
+				for (int r = i; r < std::min(j, (int)word.size()); r++)
 				{
-					for (int k = 0; k < i_rule.right_part.size(); k++)
+					temp_str += word[r];
+				}
+			for (auto& i_element : non_terminals)
+			{
+				index_of_non_terminal = IndexOfNonTerminal(i_element.first);
+				//a[index_of_non_terminal][i][j] = false;
+				for (Path i_path : non_terminals[i_element.first])
+				{
+					if (i_path.word.size() == 0)
 					{
-						//if (i_rule.right_part[0] != "[EPS]" && k == i_rule.right_part.size()) break;
-						for (int r = 0; r <= j + 1; r++)
-						{
-							h[std::pair<std::pair<std::string, std::vector<std::string>>,
-								std::pair<int, std::pair<int, int>>>
-								(std::pair<std::string, std::vector<std::string>>(i_rule.left_part, i_rule.right_part),
-									std::pair<int, std::pair<int, int>>(i, std::pair<int, int>(j + 1, k)))] +=
-
-								h[std::pair<std::pair<std::string, std::vector<std::string>>,
-								std::pair<int, std::pair<int, int>>>
-								(std::pair<std::string, std::vector<std::string>>(i_rule.left_part, i_rule.right_part),
-									std::pair<int, std::pair<int, int>>(i, std::pair<int, int>(r, k - 1)))] *
-
-								a[std::pair<std::string, std::pair<int, int>>(i_rule.right_part[k], std::pair<int, int>(r, j + 1))];
-
-							///*
-							test.clear();
-							for (std::string r_string : i_rule.right_part)
-							{
-								test += r_string;
-							}
-
-							std::cout << "h[" << i_rule.left_part << " -> " << test << ", " << i << ", " << j + 1 << ", " << k << " ] = " <<
-								h[std::pair<std::pair<std::string, std::vector<std::string>>,
-								std::pair<int, std::pair<int, int>>>
-								(std::pair<std::string, std::vector<std::string>>(i_rule.left_part, i_rule.right_part),
-									std::pair<int, std::pair<int, int>>(i, std::pair<int, int>(j + 1, k)))] << std::endl;//*/
-							///*
-							test.clear();
-							for (std::string r_string : i_rule.right_part)
-							{
-								test += r_string;
-							}
-
-							std::cout << "*h[" << i_rule.left_part << " -> " << test << ", " << i << ", " << r << ", " << k - 1 << " ] = " <<
-								h[std::pair<std::pair<std::string, std::vector<std::string>>,
-								std::pair<int, std::pair<int, int>>>
-								(std::pair<std::string, std::vector<std::string>>(i_rule.left_part, i_rule.right_part),
-									std::pair<int, std::pair<int, int>>(i, std::pair<int, int>(r, k - 1)))] << std::endl;//*/
-							///*
-							std::cout << "a[" << i_rule.right_part[k] << ", " << r << ", " << j + 1 << "] = " <<
-								a[std::pair<std::string, std::pair<int, int>>(i_rule.right_part[k], std::pair<int, int>(r, j + 1))] << std::endl << std::endl;//*/
-						}
+						a[index_of_non_terminal][i][i] = true;
+					}
+					if (VectorToString(i_path.word) == temp_str)
+					{
+						a[index_of_non_terminal][i][j] = true;
+						break;
 					}
 				}
 			}
 		}
-		//std::cout << "second" << std::endl;
-		for (int i = 0; i <= Word.size(); i++)
+		// Выводимость терминалов
+		for (std::string i_string : terminals)
 		{
-			//if (Word[0] != '\0' && i == Word.size()) break;
-			for (int j = 0; j <= Word.size(); j++)
-			{
-				//if (Word[0] != '\0' && j == Word.size()) break;
-				for (Rule i_rule : rules)
-				{
-					a[std::pair<std::string, std::pair<int, int>>(i_rule.left_part, std::pair<int, int>(i, j))] +=
+			index_of_non_terminal = IndexOfNonTerminal(i_string);
+			if (word[i] == i_string[0] && i_string != "[EPS]")
+				a[index_of_non_terminal][i][i + 1] = true;
+		}
+		for (auto& i_element : non_terminals)
+		{
+			std::cout << std::endl << "a[" << i_element.first << "][" << i << "][" << i + 1 << "] = " << a[IndexOfNonTerminal(i_element.first)][i][i + 1] << std::endl;
+			std::cout << "a[" << i_element.first << "][" << i << "][" << i << "] = " << a[IndexOfNonTerminal(i_element.first)][i][i] << std::endl;
+		}
+		for (Rule i_rule : rules)
+		{
+			h[IndexOfRule(i_rule)][i][i][0] = true;
+		}
+	}
 
-						h[std::pair<std::pair<std::string, std::vector<std::string>>,
-						std::pair<int, std::pair<int, int>>>
-						(std::pair<std::string, std::vector<std::string>>(i_rule.left_part, i_rule.right_part),
-							std::pair<int, std::pair<int, int>>(i, std::pair<int, int>(j, i_rule.right_part.size() - 1)))];
-					std::cout << "*a[" << i_rule.left_part << ", " << i << ", " << j << "] = " << a[std::pair<std::string, std::pair<int, int>>(i_rule.left_part, std::pair<int, int>(i, j))] << std::endl;
+	for (int m = 0; m < word.size(); m++)
+	{
+		for (int i = 0; i < word.size(); i++)
+		{
+			j = i + m;
+			for (Rule i_rule : rules)
+			{
+				for (int k = 1; k <= i_rule.right_part.size(); k++)
+				{
+					index_of_rule = IndexOfRule(i_rule);
+					index_of_non_terminal = IndexOfNonTerminal(i_rule.right_part[k - 1]);
+					for (int r = i; r <= j + 1; r++)
+					{
+						if (h[index_of_rule][i][j + 1][k] == true) break;
+						h[index_of_rule][i][j + 1][k] = (h[index_of_rule][i][r][k - 1] * a[index_of_non_terminal][r][j + 1]);// +(!(h[index_of_rule][i][r][k - 1]) * a[index_of_non_terminal][i][j + 1]);// + (!h[index_of_rule][i][r][k - 1] * a)
+						//if (!h[index_of_rule][i][j + 1][k])
+						{
+							temp_bool = true;
+							for (int v = 0; v < k - 1; v++)
+							{
+								temp_bool &= a[IndexOfNonTerminal(i_rule.right_part[v])][0][0];
+								if (!temp_bool) break;
+							}
+							if (temp_bool)
+							{
+								h[index_of_rule][i][j + 1][k] = h[index_of_rule][i][j + 1][k] + a[index_of_non_terminal][i][j + 1];
+								temp_bool = false;
+							}
+						}
+
+						//if (non_terminals.contains(i_rule.right_part[k - 1]))
+						//{
+						//	if (k >= 2 && non_terminals.contains(i_rule.right_part[k - 2]) && r != j + 1)
+						//	{
+						//		temp_bool = false;
+						//		temp_int = i;
+						//		for (int l = i; l < k; l++)
+						//		{
+						//			temp_bool = true;
+						//			if (!non_terminals.contains(i_rule.right_part[l]) && word[l] != i_rule.right_part[temp_int][0])
+						//			{
+						//				temp_bool = false;
+						//				break;
+						//			}
+						//			else if (non_terminals.contains(i_rule.right_part[l]))
+						//			{
+						//				temp_bool = a[IndexOfNonTerminal(i_rule.right_part[k - 2])][0][0] * a[index_of_non_terminal][r][j + 1];
+						//				if (!temp_bool) break;
+						//			}
+						//			else temp_int++;
+						//		}
+						//		h[index_of_rule][i][j + 1][k] = ((h[index_of_rule][i][r][k - 1] + temp_bool) * a[index_of_non_terminal][r][j + 1]);
+						//	}
+						//	else
+						//	{
+						//		h[index_of_rule][i][j + 1][k] = (h[index_of_rule][i][r][k - 1] * a[index_of_non_terminal][r][j + 1]);
+						//	}
+						//}
+						//else
+						//{
+						//	temp_bool = false;
+						//	temp_str.clear();
+						//	for (int g = r; g < std::min(j + 1, (int)word.size()); g++)
+						//	{
+						//		temp_str += word[g];
+						//	}
+						//	if (temp_str.size() >= i_rule.terminals_count)// && temp_str.size() <= k)
+						//	{
+						//		temp_bool = true;
+						//		for (temp_int = 0; temp_int < std::min((int)temp_str.size(), (int)i_rule.right_part.size() - k + 1); temp_int++)
+						//		{
+						//			if (temp_str[temp_int] != i_rule.right_part[k - 1 + temp_int][0])
+						//			{
+						//				temp_bool = false;
+						//				break;
+						//			}
+						//		}
+						//		//if (temp_int < temp_str.size() - 1) temp_bool = false;
+						//	}
+						//	h[index_of_rule][i][j + 1][k] = (h[index_of_rule][i][r][k - 1] * temp_bool);
+						//}
+					}
+					//std::cout << "h[" << IndexOfRule(i_rule) << "][" << i << "][" << j + 1 << "][" << k << "] = " << h[IndexOfRule(i_rule)][i][j + 1][k] << std::endl;
 				}
 			}
 		}
 	}
-	//std::cout << "third" << std::endl;
+	//std::cout << std::endl;
 
-	/*
-	 CYK_Modified(S, Г): // S — строка длины n, Г — КС-грамматика 
-     for i = 1..n
-      for Rj -> alpha // перебор состояний 
-       if( A -> w[i] in Г) a[A, i, i+1] = true // если в грамматике Г присутствует правило A -> w[i] 
-       else a[A, i, i+1] = false
-       if( A -> eps in Г) a[A, i, i] = true // если в грамматике Г присутствует правило A -> eps 
-       else a[A, i, i] = false
-       h[A->alpha, i, i, 0] = true
-     for m = 1..n
-      for i = 1..n
-          j = i+m
-       for k = 1..M
-        for Rj -> alpha // перебор состояний 
-         h[A->alpha, i, j+1, k] = OR( for r = i..j+1) (h[A->alpha, i, r, k-1] & a[alpha[k],r,j+1])
-     for i = 1..n
-       for j = 1..n
-         for Rj -> alpha
-          a[A, i, j] = OR( for A->alpha) h[A->alpha, i, j, |alpha|] // где |alpha| — размер правой части правила
-     return a[S, 1, n]
-	*/
-
-	return a[std::pair<std::string, std::pair<int, int>>(starting_non_terminal, std::pair<int, int>(0, Word.size()))];
-}
-
-bool CF_Grammar::a(const std::string& Non_Terminal, const int& I, const int& J)
-{
-	if (I == J)
+	for (int i = 0; i <= word.size(); i++)
 	{
-		if (shortest_path[Non_Terminal].length == 0) return true;
-		else return false;
-	}
-
-	return false;
-}
-
-bool CF_Grammar::h(const std::string& Word, const Rule& Rule, const int& I, const int& J, const int& K)
-{
-	std::vector<std::string> prefix;
-	std::string result;
-	std::string temp;
-	std::string searching_for;
-
-	for (int i = I; i < J; i++)
-		searching_for += Word[i];
-
-	for (int i = 0; i < K; i++)
-		prefix.push_back(Rule.right_part[i]);
-
-	for (std::string i_string : prefix)
-	{
-		if (!non_terminals.contains(i_string))
-			result += i_string;
-		else
+		for (j = 0; j <= word.size(); j++)
 		{
-			for (Path i_path : non_terminals[i_string])
+			for (Rule i_rule : rules)
 			{
+				temp_rules.clear();
+				temp_rules = NonTerminalRules(i_rule.left_part);
+				for(Rule j_rule : temp_rules)
+				{
+					if (a[IndexOfNonTerminal(i_rule.left_part)][i][j] == true) break;
 
+					a[IndexOfNonTerminal(i_rule.left_part)][i][j] = h[IndexOfRule(j_rule)][i][j][j_rule.right_part.size()];
+					//std::cout << "a[" << i_rule.left_part << "][" << i << "][" << j << "] = " << a[IndexOfNonTerminal(i_rule.left_part)][i][j] << std::endl;
+					//std::cout << "h[" << IndexOfRule(j_rule) << "][" << i << "][" << j << "][" << j_rule.right_part.size() << "] = " << h[IndexOfRule(j_rule)][i][j][j_rule.right_part.size()] << std::endl;
+				}
+			}
+			//for (auto& i_element : non_terminals)
+			{
+				//std::cout << "a[" << i_element.first << "][" << i << "][" << j << "] = " << a[IndexOfNonTerminal(i_element.first)][i][j] << std::endl;
 			}
 		}
-		if (result == searching_for) return true;
 	}
 
-	return false;
+	result = a[IndexOfNonTerminal(starting_non_terminal)][0][Word.size()];
+	//std::cout << "a[" << starting_non_terminal << "][0][" << word.size() << "] = " << a[IndexOfNonTerminal(starting_non_terminal)][0][word.size()] << std::endl;
+
+	return result;
+}
+
+int CF_Grammar::IndexOfNonTerminal(const std::string& Non_Terminal)
+{
+	int index = (int)std::distance(non_terminals.begin(), non_terminals.find(Non_Terminal));
+	if (index != non_terminals.size()) return index;
+	return (int)std::distance(terminals.begin(), terminals.find(Non_Terminal)) + (int)non_terminals.size();
+}
+
+int CF_Grammar::IndexOfRule(const Rule& Current_Rule)
+{
+	return std::max(-1, (int)std::distance(rules.begin(), std::find(rules.begin(), rules.end(), Current_Rule)));
+}
+
+std::string CF_Grammar::VectorToString(const std::vector<std::string>& Object)
+{
+	std::string result;
+
+	for (int i = 0; i < Object.size(); i++)
+		result += Object[i];
+
+	return result;
+}
+
+std::vector<Rule> CF_Grammar::NonTerminalRules(const std::string& Non_Terminal)
+{
+	std::vector<Rule> result;
+	bool found_one = false;
+	for (Rule i_rule : rules)
+	{
+		if (i_rule.left_part == Non_Terminal)
+		{
+			result.push_back(i_rule);
+			found_one = true;
+		}
+		else if (!found_one) break;
+	}
+	return result;
 }
 
 bool CF_Grammar::EarleyAlg(const std::vector<std::string>& Word)
@@ -913,6 +1067,13 @@ bool Rule::operator==(const Rule& Object) const
 	if (this->right_part != Object.right_part) return false;
 
 	return true;
+}
+
+bool Rule::operator<(const Rule& Object) const
+{
+	if (this->left_part < Object.left_part)
+		return true;
+	return false;
 }
 
 Rule::Rule()
@@ -968,38 +1129,48 @@ bool Path::operator+=(const Path& Object)
 	return true;
 }
 
+Path Path::ApplyPath(const Path& Object, const int& position)
+{
+	Path new_path;
+	int pos = 0;
+	int place = 0;
+	new_path = *this;
+	Path obj = Object;
+	new_path.length += Object.length;
+	for (Rule i_rule : Object.path_rules)
+	{
+		for (pos = 0; pos < std::min(obj.path_words[place].size(), obj.path_words[place + 1].size()); pos++)
+		{
+			if (obj.path_words[place][pos] != obj.path_words[place + 1][pos])
+				break;
+		}
+		new_path.path_rules.push_back(i_rule);
+		new_path.word = ApplyRule(new_path.word, i_rule, position + pos);
+		new_path.path_words.push_back(new_path.word);
+		place++;
+	}
+
+	return new_path;
+}
+
 void Path::PrintPath(bool IsDebug)
 {
-	std::vector<std::string> word;
 	std::cout << path_rules[0].left_part << " -> ";
-	word.push_back(path_rules[0].left_part);
-	for (int i = 0; i < path_rules.size(); i++)
+	for (int i = 1; i < path_words.size(); i++)
 	{
-		word = ApplyRule(word, path_rules[i], 0);
-		for (std::string i_string : word)
-		{
-			std::cout << i_string;
-		}
-		if (i != path_rules.size() - 1)
-			std::cout << " -> ";
-	}
-	/*
-	if (IsDebug)
-	{
-		std::cout << ", length = " << length;
-		std::cout << std::endl;
-		for (int i = 0; i < path_words.size(); i++)
+		if (i != path_words.size() - 1)
 		{
 			for (std::string i_string : path_words[i])
 			{
 				std::cout << i_string;
 			}
-			if (i != path_words.size() - 1)
-				std::cout << " -> ";
+			std::cout << " -> ";
 		}
-		std::cout << std::endl;
+		else
+			for (std::string i_string : this->word)
+				std::cout << i_string;
 	}
-	//*/
+	std::cout << " size = " << this->word.size();
 	std::cout << std::endl;
 }
 
@@ -1017,7 +1188,6 @@ Path::~Path()
 }
 
 //=============== Применение правила к слову ===============================================================
-
 std::vector<std::string> ApplyRule(const std::vector<std::string>& String, const Rule& Rule, const int& Non_Terminal_Number)
 {
 	std::vector<std::string> result = String;
@@ -1025,12 +1195,8 @@ std::vector<std::string> ApplyRule(const std::vector<std::string>& String, const
 	int non_terminal_number = 0;
 	std::vector<std::string>::iterator position = std::ranges::find(result.begin(), result.end(), Rule.left_part);
 
-	// Поиск нужного места в строке
-	while (non_terminal_number != Non_Terminal_Number)
-	{
-		position = std::ranges::find(position, result.end(), Rule.left_part);
-		non_terminal_number++;
-	}
+	if (Non_Terminal_Number > 0)
+		position = result.begin() + Non_Terminal_Number;
 
 	// Составление строки-замены
 	for (std::string i_string : Rule.right_part)
@@ -1048,4 +1214,29 @@ std::vector<std::string> ApplyRule(const std::vector<std::string>& String, const
 	}
 
 	return result;
+}
+
+//=============== Совмещение двух наборов правил ===========================================================
+std::map<std::string, std::vector<Path>> PathConvergence(const std::map<std::string, std::vector<Path>>& First_Object, const std::map<std::string, std::vector<Path>>& Second_Object)
+{
+	std::map<std::string, std::vector<Path>> result = First_Object;
+	for (auto& i_element : Second_Object)
+	{
+		if (!result.contains(i_element.first))
+			result.emplace(std::map<std::string, std::vector<Path>>::value_type(i_element.first, NULL));
+		for (Path i_path : i_element.second)
+		{
+			if (CF_Grammar().IsUniquePath(i_path, result))
+				result[i_element.first].push_back(i_path);
+		}
+	}
+	return result;
+}
+
+//=============== Содержится ли строка в векторе ===========================================================
+bool VecContStr(const std::vector<std::string>& Vector, const std::string& String)
+{
+	if (std::ranges::find(Vector.begin(), Vector.end(), String) != Vector.end())
+		return true;
+	return false;
 }
