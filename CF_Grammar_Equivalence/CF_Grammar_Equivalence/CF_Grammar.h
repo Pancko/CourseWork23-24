@@ -36,6 +36,7 @@ struct Path
 	std::vector<Rule> path_rules;						// Правила
 	std::vector<std::vector<std::string>> path_words;	// Последовательность слов
 	std::vector<std::string> word;						// Конечное слово
+	//std::vector<Path> pathes_used;
 
 	bool operator==(const Path& Object) const;
 	bool operator+=(const Path& Object);
@@ -86,7 +87,7 @@ public:
 	// Генерация путей, доведение всех правил до терминальных слов
 	std::map<std::string, std::vector<Path>> GenerateSubPath(const Path& Current_Path);
 	// Проверка пути на уникальность
-	bool IsUniquePath(const Path& Path_To_Check, const std::map<std::string, std::vector<Path>>& Current_Pathes);
+	bool IsUniquePath(const Path& Path_To_Check, const Path& Added_Path, const std::map<std::string, std::vector<Path>>& Current_Pathes);
 	// Проверка правой части правила на удовлетворение условиям создания нового пути
 	bool IsRuleViable(const Rule& Current_Rule, const std::map<std::string, std::vector<Path>>& Non_Terminals);
 
@@ -123,7 +124,7 @@ public:
 	std::set<std::string> GetWords();
 
 	// Алгоритм Кока-Янгера-Касами, модификация для произвольной грамматики
-	bool CYK_Alg(const std::string& Word);
+	bool CYK_Alg_Modified(const std::string& Word);
 	// Вспомогательные функции для алгоритмов
 	int IndexOfNonTerminal(const std::string& Non_Terminal);
 	int IndexOfRule(const Rule& Current_Rule);

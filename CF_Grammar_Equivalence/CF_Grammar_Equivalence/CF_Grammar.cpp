@@ -148,8 +148,10 @@ void CF_Grammar::GeneratePathes()
 	for (Rule i_rule : rules) // Базис. Заполнить массив правил
 	{
 		pathes.push_back(PathPermutations(i_rule));
+
 		for (std::string i_string : i_rule.right_part)
 			pathes[IndexOfRule(i_rule)].right_part.push_back(std::map<std::string, std::vector<std::string>>::value_type(i_string, NULL));
+
 		if (!GotNonTerminal(i_rule.right_part)) // Если правило порождает нетерминальное слово
 		{
 			if (!new_found_pathes.contains(i_rule.left_part))
@@ -212,7 +214,7 @@ void CF_Grammar::GeneratePathes()
 
 								current_path = current_path.ApplyPath(i_path, position);
 
-								if (IsUniquePath(current_path, non_terminals))
+								if (IsUniquePath(current_path, i_path, non_terminals))
 								{
 									pathes[IndexOfRule(i_rule)].right_part[position].second.push_back(temp_str); // Добавляем новый вариант в таблицу
 									if (GotNonTerminal(current_path)) // Генерируем новые пути
@@ -264,7 +266,7 @@ std::map<std::string, std::vector<Path>> CF_Grammar::GenerateSubPath(const Path&
 			{
 				current_path = Current_Path;
 				current_path += i_path;
-				if (IsUniquePath(current_path, non_terminals))
+				if (IsUniquePath(current_path, i_path, non_terminals))
 				{
 					if (GotNonTerminal(current_path))
 						result = PathConvergence(result, GenerateSubPath(current_path));
@@ -299,22 +301,26 @@ bool CF_Grammar::IsRuleViable(const Rule& Current_Rule, const std::map<std::stri
 	return found_viable_non_terminal;
 }
 
-bool CF_Grammar::IsUniquePath(const Path& Path_To_Check, const std::map<std::string, std::vector<Path>>& Current_Pathes)
+bool CF_Grammar::IsUniquePath(const Path& Path_To_Check, const Path& Added_Path, const std::map<std::string, std::vector<Path>>& Current_Pathes)
 {
 	std::map<std::string, std::vector<Path>> current_pathes = Current_Pathes;
+
 	// Если путь с таким заключительным словом уже существует
 	for (Path i_path : current_pathes[Path_To_Check.path_rules[0].left_part])
 	{
 		if (i_path.word == Path_To_Check.word) return false;
 	}
 
-	// Если одно и то же правило (кроме опустошающих) применяется больше одного раза
+	// Если только что добавленный путь является опустошающим (то есть просто убирает нетерминал), то дальше можно не расследовать
+	if (Added_Path.path_rules.size() > 0 && Added_Path.word.size() == 0) return true;
+
+	// Если одно и то же правило, порождающее нетерминалы, применяется больше одного раза
 	for (int i = (int)Path_To_Check.path_rules.size() - 1; i >= 0; i--)
 	{
 		for (int j = (int)Path_To_Check.path_rules.size() - 1; j >= 0; j--)
 		{
 			if (i != j && Path_To_Check.path_rules[i] == Path_To_Check.path_rules[j]
-				&& Path_To_Check.path_rules[i].right_part[0] != "[EPS]") return false;
+				&& GotNonTerminal(Path_To_Check.path_rules[i].right_part) /*Path_To_Check.path_rules[i].right_part[0] != "[EPS]"*/) return false;
 		}
 	}
 
@@ -742,7 +748,7 @@ std::vector<std::string> CF_Grammar::GenerateMultipleWords(const int& Amount, co
 		if (words_size == words.size()) iterations++;
 		else iterations = 0;
 		
-		if (iterations > Amount && words.size() < non_terminals[starting_non_terminal].size())
+		if (iterations > Amount)
 		{
 			for (Path i_path : non_terminals[starting_non_terminal])
 			{
@@ -778,7 +784,7 @@ std::set<std::string> CF_Grammar::GetWords()
 
 //=============== Алгоритмы анализа принадлежности слова грамматике =======================================
 
-bool CF_Grammar::CYK_Alg(const std::string& Word)
+bool CF_Grammar::CYK_Alg_Modified(const std::string& Word)
 {
 	bool result = false;
 	bool temp_bool = false;
@@ -823,34 +829,10 @@ bool CF_Grammar::CYK_Alg(const std::string& Word)
 		}
 	}
 
-	//for (int i = 0; i < word.size(); i++)
-	//{
-	//	temp_str.clear();
-	//	temp_str += word[i];
-	//	if (word == "[EPS]")
-	//		temp_str = "[EPS]";
-	//	if (temp_str == "[EPS]" && i > 0) break;
-	//	for (Rule i_rule : rules)
-	//	{
-	//		// Если в грамматике присутствует правило A -> w[i] 
-	//		if (i_rule.right_part.size() == 1 && i_rule.right_part[0] == temp_str) a[IndexOfNonTerminal(i_rule.left_part)][i][i + 1] = true;
-
-	//		// Если в грамматике присутствует правило A -> [EPS] 
-	//		if (i_rule.right_part[0] == "[EPS]") a[IndexOfNonTerminal(i_rule.left_part)][i][i] = true;
-
-	//		h[IndexOfRule(i_rule)][i][i][0] = true;
-	//	}
-	//	/*for (auto& i_element : non_terminals)
-	//	{
-	//		std::cout << std::endl << "a[" << i_element.first << "][" << i << "][" << i + 1 << "] = " << a[IndexOfNonTerminal(i_element.first)][i][i + 1] << std::endl;
-	//		std::cout << "a[" << i_element.first << "][" << i << "][" << i << "] = " << a[IndexOfNonTerminal(i_element.first)][i][i] << std::endl;
-	//	}*/
-	//}
-
-	for (int i = 0; i </*=*/ word.size(); i++)
+	for (int i = 0; i <= word.size(); i++)
 	{
 		// Выводимость из нетерминалов
-		for (j = i + 1; j <= word.size(); j++)
+		for (j = i + 1; j <= word.size() + 1; j++)
 		{
 			temp_str.clear();
 			if (word == "[EPS]")
@@ -863,7 +845,6 @@ bool CF_Grammar::CYK_Alg(const std::string& Word)
 			for (auto& i_element : non_terminals)
 			{
 				index_of_non_terminal = IndexOfNonTerminal(i_element.first);
-				//a[index_of_non_terminal][i][j] = false;
 				for (Path i_path : non_terminals[i_element.first])
 				{
 					if (i_path.word.size() == 0)
@@ -878,17 +859,13 @@ bool CF_Grammar::CYK_Alg(const std::string& Word)
 				}
 			}
 		}
+		if (a[IndexOfNonTerminal(starting_non_terminal)][0][Word.size()]) return true;
 		// Выводимость терминалов
 		for (std::string i_string : terminals)
 		{
 			index_of_non_terminal = IndexOfNonTerminal(i_string);
 			if (word[i] == i_string[0] && i_string != "[EPS]")
 				a[index_of_non_terminal][i][i + 1] = true;
-		}
-		for (auto& i_element : non_terminals)
-		{
-			std::cout << std::endl << "a[" << i_element.first << "][" << i << "][" << i + 1 << "] = " << a[IndexOfNonTerminal(i_element.first)][i][i + 1] << std::endl;
-			std::cout << "a[" << i_element.first << "][" << i << "][" << i << "] = " << a[IndexOfNonTerminal(i_element.first)][i][i] << std::endl;
 		}
 		for (Rule i_rule : rules)
 		{
@@ -903,15 +880,15 @@ bool CF_Grammar::CYK_Alg(const std::string& Word)
 			j = i + m;
 			for (Rule i_rule : rules)
 			{
+				index_of_rule = IndexOfRule(i_rule);
 				for (int k = 1; k <= i_rule.right_part.size(); k++)
 				{
-					index_of_rule = IndexOfRule(i_rule);
 					index_of_non_terminal = IndexOfNonTerminal(i_rule.right_part[k - 1]);
 					for (int r = i; r <= j + 1; r++)
 					{
 						if (h[index_of_rule][i][j + 1][k] == true) break;
-						h[index_of_rule][i][j + 1][k] = (h[index_of_rule][i][r][k - 1] * a[index_of_non_terminal][r][j + 1]);// +(!(h[index_of_rule][i][r][k - 1]) * a[index_of_non_terminal][i][j + 1]);// + (!h[index_of_rule][i][r][k - 1] * a)
-						//if (!h[index_of_rule][i][j + 1][k])
+						h[index_of_rule][i][j + 1][k] = (h[index_of_rule][i][r][k - 1] * a[index_of_non_terminal][r][j + 1]);
+						if (!h[index_of_rule][i][j + 1][k])
 						{
 							temp_bool = true;
 							for (int v = 0; v < k - 1; v++)
@@ -922,95 +899,19 @@ bool CF_Grammar::CYK_Alg(const std::string& Word)
 							if (temp_bool)
 							{
 								h[index_of_rule][i][j + 1][k] = h[index_of_rule][i][j + 1][k] + a[index_of_non_terminal][i][j + 1];
-								temp_bool = false;
 							}
 						}
-
-						//if (non_terminals.contains(i_rule.right_part[k - 1]))
-						//{
-						//	if (k >= 2 && non_terminals.contains(i_rule.right_part[k - 2]) && r != j + 1)
-						//	{
-						//		temp_bool = false;
-						//		temp_int = i;
-						//		for (int l = i; l < k; l++)
-						//		{
-						//			temp_bool = true;
-						//			if (!non_terminals.contains(i_rule.right_part[l]) && word[l] != i_rule.right_part[temp_int][0])
-						//			{
-						//				temp_bool = false;
-						//				break;
-						//			}
-						//			else if (non_terminals.contains(i_rule.right_part[l]))
-						//			{
-						//				temp_bool = a[IndexOfNonTerminal(i_rule.right_part[k - 2])][0][0] * a[index_of_non_terminal][r][j + 1];
-						//				if (!temp_bool) break;
-						//			}
-						//			else temp_int++;
-						//		}
-						//		h[index_of_rule][i][j + 1][k] = ((h[index_of_rule][i][r][k - 1] + temp_bool) * a[index_of_non_terminal][r][j + 1]);
-						//	}
-						//	else
-						//	{
-						//		h[index_of_rule][i][j + 1][k] = (h[index_of_rule][i][r][k - 1] * a[index_of_non_terminal][r][j + 1]);
-						//	}
-						//}
-						//else
-						//{
-						//	temp_bool = false;
-						//	temp_str.clear();
-						//	for (int g = r; g < std::min(j + 1, (int)word.size()); g++)
-						//	{
-						//		temp_str += word[g];
-						//	}
-						//	if (temp_str.size() >= i_rule.terminals_count)// && temp_str.size() <= k)
-						//	{
-						//		temp_bool = true;
-						//		for (temp_int = 0; temp_int < std::min((int)temp_str.size(), (int)i_rule.right_part.size() - k + 1); temp_int++)
-						//		{
-						//			if (temp_str[temp_int] != i_rule.right_part[k - 1 + temp_int][0])
-						//			{
-						//				temp_bool = false;
-						//				break;
-						//			}
-						//		}
-						//		//if (temp_int < temp_str.size() - 1) temp_bool = false;
-						//	}
-						//	h[index_of_rule][i][j + 1][k] = (h[index_of_rule][i][r][k - 1] * temp_bool);
-						//}
 					}
-					//std::cout << "h[" << IndexOfRule(i_rule) << "][" << i << "][" << j + 1 << "][" << k << "] = " << h[IndexOfRule(i_rule)][i][j + 1][k] << std::endl;
 				}
-			}
-		}
-	}
-	//std::cout << std::endl;
-
-	for (int i = 0; i <= word.size(); i++)
-	{
-		for (j = 0; j <= word.size(); j++)
-		{
-			for (Rule i_rule : rules)
-			{
-				temp_rules.clear();
-				temp_rules = NonTerminalRules(i_rule.left_part);
-				for(Rule j_rule : temp_rules)
+				if (h[index_of_rule][i][j + 1][i_rule.right_part.size()] == true)
 				{
-					if (a[IndexOfNonTerminal(i_rule.left_part)][i][j] == true) break;
-
-					a[IndexOfNonTerminal(i_rule.left_part)][i][j] = h[IndexOfRule(j_rule)][i][j][j_rule.right_part.size()];
-					//std::cout << "a[" << i_rule.left_part << "][" << i << "][" << j << "] = " << a[IndexOfNonTerminal(i_rule.left_part)][i][j] << std::endl;
-					//std::cout << "h[" << IndexOfRule(j_rule) << "][" << i << "][" << j << "][" << j_rule.right_part.size() << "] = " << h[IndexOfRule(j_rule)][i][j][j_rule.right_part.size()] << std::endl;
+					a[IndexOfNonTerminal(i_rule.left_part)][i][j + 1] = true;
 				}
-			}
-			//for (auto& i_element : non_terminals)
-			{
-				//std::cout << "a[" << i_element.first << "][" << i << "][" << j << "] = " << a[IndexOfNonTerminal(i_element.first)][i][j] << std::endl;
 			}
 		}
 	}
 
 	result = a[IndexOfNonTerminal(starting_non_terminal)][0][Word.size()];
-	//std::cout << "a[" << starting_non_terminal << "][0][" << word.size() << "] = " << a[IndexOfNonTerminal(starting_non_terminal)][0][word.size()] << std::endl;
 
 	return result;
 }
@@ -1125,6 +1026,7 @@ bool Path::operator+=(const Path& Object)
 	word = new_path.word;
 	path_words = new_path.path_words;
 	path_rules = new_path.path_rules;
+	//pathes_used.push_back(Object);
 
 	return true;
 }
@@ -1137,6 +1039,7 @@ Path Path::ApplyPath(const Path& Object, const int& position)
 	new_path = *this;
 	Path obj = Object;
 	new_path.length += Object.length;
+	//new_path.pathes_used.push_back(Object);
 	for (Rule i_rule : Object.path_rules)
 	{
 		for (pos = 0; pos < std::min(obj.path_words[place].size(), obj.path_words[place + 1].size()); pos++)
@@ -1226,7 +1129,7 @@ std::map<std::string, std::vector<Path>> PathConvergence(const std::map<std::str
 			result.emplace(std::map<std::string, std::vector<Path>>::value_type(i_element.first, NULL));
 		for (Path i_path : i_element.second)
 		{
-			if (CF_Grammar().IsUniquePath(i_path, result))
+			if (CF_Grammar().IsUniquePath(i_path, Path(), result))
 				result[i_element.first].push_back(i_path);
 		}
 	}

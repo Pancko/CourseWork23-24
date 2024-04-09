@@ -396,3 +396,5 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+CF_Grammar_Equivalence/.vs/CF_Grammar_Equivalence/v17/ipch/AutoPCH/50bdfe2d32e42b5f/MAIN_FILE.ipch
+CF_Grammar_Equivalence/.vs/CF_Grammar_Equivalence/v17/ipch/AutoPCH/2c2c2b9d9201a864/CF_GRAMMAR.ipch
