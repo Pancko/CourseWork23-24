@@ -113,7 +113,7 @@ public:
 	// Генерация случайного терминального слова
 	std::string GenerateWord(const int& Max_Length);
 	// Изменение слова в угоду уникальности
-	bool ReGenerateWord(const Path& Word);
+	//bool ReGenerateWord(const Path& Word);
 	// Генерация нескольких случайных терминальных слов с заданной максимальной длиной
 	std::vector<std::string> GenerateMultipleWords(const int& Amount, const int& Max_Length);
 

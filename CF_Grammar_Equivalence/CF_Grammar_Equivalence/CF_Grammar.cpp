@@ -262,7 +262,7 @@ std::map<std::string, std::vector<Path>> CF_Grammar::GenerateSubPath(const Path&
 	{
 		if (non_terminals.contains(i_string))           // Если символ является нетерминалом
 		{
-			for (Path i_path : old_pathes[i_string]) // Пути этого нетерминала
+			for (Path i_path : old_pathes[i_string])    // Пути этого нетерминала
 			{
 				current_path = Current_Path;
 				current_path += i_path;
@@ -551,6 +551,7 @@ std::string CF_Grammar::GenerateWord(const int& Max_Length)
 	std::vector<Rule> appliable_rules;
 	Path current_word_path;
 	int rule_to_use = 0;
+	int temp_int = 0;
 	size_t expected_length = 0;
 	size_t actual_length = 0;
 	bool non_terminal_found = 0;
@@ -595,7 +596,7 @@ std::string CF_Grammar::GenerateWord(const int& Max_Length)
 			if (non_terminals.contains(i_string))
 				expected_length += shortest_path[i_string].length;
 		}
-		if (expected_length == 0 || actual_length > Max_Length) break;
+		if (actual_length > Max_Length) break;
 
 		// Составление нового списка возможных для применения правил
 		appliable_rules.clear();
@@ -607,15 +608,18 @@ std::string CF_Grammar::GenerateWord(const int& Max_Length)
 				non_terminal_found = 0;
 				for (Rule i_rule : rules)
 				{
-					if (i_rule.left_part == i_string && (!non_terminal_found || GotNonTerminal(i_rule.right_part)))
+					if (i_rule.left_part == i_string)
 					{
 						non_terminal_found = 1;
 						appliable_rules.push_back(i_rule);
+						temp_int = std::max(temp_int, (int)i_rule.terminals_count);
 					}
 					else if (non_terminal_found && i_rule.left_part != i_string) break;
 				}
 			}
 		}
+		if (temp_int == 0) break;
+		temp_int = 0;
 	}
 
 	// Доведение слова до конца
@@ -645,12 +649,10 @@ std::string CF_Grammar::GenerateWord(const int& Max_Length)
 		result += i_string;
 	}
 
-	if (words.contains(result))
+	if (!words.contains(result))
 	{
-		ReGenerateWord(current_word_path);
-	}
-	else 
 		words.insert(result);
+	}
 
 	word.~vector();
 	final_word.~vector();
@@ -659,6 +661,7 @@ std::string CF_Grammar::GenerateWord(const int& Max_Length)
 	return result;
 }
 
+/*
 bool CF_Grammar::ReGenerateWord(const Path& Word)
 {
 	std::vector<std::string> current_word;
@@ -667,6 +670,7 @@ bool CF_Grammar::ReGenerateWord(const Path& Word)
 	bool non_terminal_found;
 	std::string i_string;
 	std::string result_word;
+	size_t max_lenght = Word.word.size(); 
 
 	// Идем в обратном порядке применения правил
 	for (int i = (int)Word.path_rules.size() - 1; i >= 0; --i)
@@ -732,6 +736,7 @@ bool CF_Grammar::ReGenerateWord(const Path& Word)
 
 	return false;
 }
+//*/
 
 std::vector<std::string> CF_Grammar::GenerateMultipleWords(const int& Amount, const int& Max_Length)
 {
@@ -878,34 +883,37 @@ bool CF_Grammar::CYK_Alg_Modified(const std::string& Word)
 		for (int i = 0; i < word.size(); i++)
 		{
 			j = i + m;
-			for (Rule i_rule : rules)
+			for (int times = 0; times < 2; times++)
 			{
-				index_of_rule = IndexOfRule(i_rule);
-				for (int k = 1; k <= i_rule.right_part.size(); k++)
+				for (Rule i_rule : rules)
 				{
-					index_of_non_terminal = IndexOfNonTerminal(i_rule.right_part[k - 1]);
-					for (int r = i; r <= j + 1; r++)
+					index_of_rule = IndexOfRule(i_rule);
+					for (int k = 1; k <= i_rule.right_part.size(); k++)
 					{
-						if (h[index_of_rule][i][j + 1][k] == true) break;
-						h[index_of_rule][i][j + 1][k] = (h[index_of_rule][i][r][k - 1] * a[index_of_non_terminal][r][j + 1]);
-						if (!h[index_of_rule][i][j + 1][k])
+						index_of_non_terminal = IndexOfNonTerminal(i_rule.right_part[k - 1]);
+						for (int r = i; r <= j + 1; r++)
 						{
-							temp_bool = true;
-							for (int v = 0; v < k - 1; v++)
+							if (h[index_of_rule][i][j + 1][k] == true) break;
+							h[index_of_rule][i][j + 1][k] = (h[index_of_rule][i][r][k - 1] * a[index_of_non_terminal][r][j + 1]);
+							if (!h[index_of_rule][i][j + 1][k])
 							{
-								temp_bool &= a[IndexOfNonTerminal(i_rule.right_part[v])][0][0];
-								if (!temp_bool) break;
-							}
-							if (temp_bool)
-							{
-								h[index_of_rule][i][j + 1][k] = h[index_of_rule][i][j + 1][k] + a[index_of_non_terminal][i][j + 1];
+								temp_bool = true;
+								for (int v = 0; v < k - 1; v++)
+								{
+									temp_bool &= a[IndexOfNonTerminal(i_rule.right_part[v])][0][0];
+									if (!temp_bool) break;
+								}
+								if (temp_bool)
+								{
+									h[index_of_rule][i][j + 1][k] = h[index_of_rule][i][j + 1][k] + a[index_of_non_terminal][i][j + 1];
+								}
 							}
 						}
 					}
-				}
-				if (h[index_of_rule][i][j + 1][i_rule.right_part.size()] == true)
-				{
-					a[IndexOfNonTerminal(i_rule.left_part)][i][j + 1] = true;
+					if (h[index_of_rule][i][j + 1][i_rule.right_part.size()] == true)
+					{
+						a[IndexOfNonTerminal(i_rule.left_part)][i][j + 1] = true;
+					}
 				}
 			}
 		}

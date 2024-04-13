@@ -6,8 +6,8 @@ int main()
 {
 	srand((unsigned int)time(NULL));
 
-	std::string Filename1 = "Grammar3.txt";
-	std::string Filename2 = "Grammar2.txt";
+	std::string Filename1 = "Grammar4.txt";
+	std::string Filename2 = "Grammar3.txt";
 
 	CF_Grammar grammar1;
 	CF_Grammar grammar2;
@@ -16,6 +16,12 @@ int main()
 
 	bool IsDebug = 1;
 	bool ShowPath = 0;
+
+	bool temp_bool = false;
+	float temp_float = 0;
+	float grammar1_2 = 0;
+	float grammar2_1 = 0;
+	std::vector<std::string> incorrect_words;
 
 	int size1 = 100;
 	int size2 = 100;
@@ -44,14 +50,46 @@ int main()
 	std::cout << std::endl << "First grammar words in second grammar test" << std::endl;
 	for (std::string i_string : words)
 	{
-		std::cout << "Word " << i_string << ", is " << grammar2.CYK_Alg_Modified(i_string) << std::endl;
+		temp_bool = grammar2.CYK_Alg_Modified(i_string);
+		if (!temp_bool)
+			incorrect_words.push_back(i_string);
+		else
+			temp_float++;
 	}
+	if (incorrect_words.size() > 0)
+	{
+		std::cout << "Second grammar can't produce these words:" << std::endl;
+		for (std::string i_string : incorrect_words)
+			std::cout << i_string << std::endl;
+	}
+	else
+		std::cout << "Second grammar can produce all words!" << std::endl;
+	grammar1_2 = 100 * temp_float / words.size();
+	temp_float = 0;
+	incorrect_words.clear();
 
 	words = grammar2.GetWords();
 	std::cout << std::endl << "Second grammar words in first grammar test" << std::endl;
 	for (std::string i_string : words)
 	{
-		std::cout << "Word " << i_string << ", is " << grammar1.CYK_Alg_Modified(i_string) << std::endl;
+		temp_bool = grammar1.CYK_Alg_Modified(i_string);
+		if (!temp_bool)
+			incorrect_words.push_back(i_string);
+		else
+			temp_float++;
 	}
+	if (incorrect_words.size() > 0)
+	{
+		std::cout << "First grammar can't produce these words:" << std::endl;
+		for (std::string i_string : incorrect_words)
+			std::cout << i_string << std::endl;
+	}
+	else
+		std::cout << "First grammar can produce all words!" << std::endl;
+	grammar2_1 = 100 * temp_float / words.size();
+
+	std::cout << std::endl;
+	std::cout << "Grammar 2 can replicate " << grammar1_2 << "% of grammar 1 words" << std::endl;
+	std::cout << "Grammar 1 can replicate " << grammar2_1 << "% of grammar 2 words" << std::endl;
 	return 0;
 }
