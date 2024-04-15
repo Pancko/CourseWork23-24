@@ -36,7 +36,6 @@ struct Path
 	std::vector<Rule> path_rules;						// Правила
 	std::vector<std::vector<std::string>> path_words;	// Последовательность слов
 	std::vector<std::string> word;						// Конечное слово
-	//std::vector<Path> pathes_used;
 
 	bool operator==(const Path& Object) const;
 	bool operator+=(const Path& Object);
@@ -65,7 +64,7 @@ private:
 	std::set<std::string> bad_non_terminals;				// "Плохие" нетерминалы
 	std::set<std::string> terminals;						// Sigma
 	std::vector<Rule> rules;								// P
-	int pathes_amount = 0;
+	int pathes_amount = 0;                                  // Количество путей
 	std::set<std::string> words;							// Сгенерированныые слова
 
 public:
@@ -82,6 +81,8 @@ public:
 
 	// Генерация путей. Анализ и удаление циклов, бесполезных нетерминалов
 	void AnalyzeNonTerminals();
+	// Быстрая генерация путей, нахождение первых быстрых выводов
+	void GenerateBasicPathes();
 	// Полная генерация путей.
 	void GeneratePathes();
 	// Генерация путей, доведение всех правил до терминальных слов
@@ -112,29 +113,28 @@ public:
 
 	// Генерация случайного терминального слова
 	std::string GenerateWord(const int& Max_Length);
-	// Изменение слова в угоду уникальности
-	//bool ReGenerateWord(const Path& Word);
 	// Генерация нескольких случайных терминальных слов с заданной максимальной длиной
 	std::vector<std::string> GenerateMultipleWords(const int& Amount, const int& Max_Length);
 
-
 	// Печать сгенерированных слов
 	void PrintWords(bool IsDebug = false);
-	
+	// Получение сгенерированных слов
 	std::set<std::string> GetWords();
+
 
 	// Алгоритм Кока-Янгера-Касами, модификация для произвольной грамматики
 	bool CYK_Alg_Modified(const std::string& Word);
-	// Вспомогательные функции для алгоритмов
+
+
+	// Вспомогательные функции для алгоритмов:
+	// Номер нетерминала либо терминала
 	int IndexOfNonTerminal(const std::string& Non_Terminal);
+	// Номер правила
 	int IndexOfRule(const Rule& Current_Rule);
+	// Приведение вектора строк к строке
 	std::string VectorToString(const std::vector<std::string>& Object);
-
-
+	// Получение всех правил данного нетерминала
 	std::vector<Rule> NonTerminalRules(const std::string& Non_Terminal);
-
-	// Алгоритм Эрли
-	bool EarleyAlg(const std::vector<std::string>& Word);
 };
 
 // Применение правила к слову
@@ -143,3 +143,6 @@ std::vector<std::string> ApplyRule(const std::vector<std::string>& String, const
 std::map<std::string, std::vector<Path>> PathConvergence(const std::map<std::string, std::vector<Path>>& First_Object, const std::map<std::string, std::vector<Path>>& Second_Object);
 // Содержится ли строка в векторе
 bool VecContStr(const std::vector<std::string>& Vector, const std::string& String);
+
+// Генерация и проверка выводимости слов в двух грамматиках методом Кока-Янгера-Касами
+void EquivalenceTest(const CF_Grammar& Grammar1, const CF_Grammar& Grammar2, const int& Words_Lenght = 10);
