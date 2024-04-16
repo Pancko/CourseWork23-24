@@ -486,16 +486,6 @@ bool CF_Grammar::IsUniquePath(const Path& Path_To_Check, const Path& Added_Path,
 	// Если только что добавленный путь является опустошающим (то есть просто убирает нетерминал), то дальше можно не расследовать
 	if (Added_Path.path_rules.size() > 0 && Added_Path.word.size() == 0) return true;
 
-	// Если одно и то же правило, порождающее нетерминалы, применяется больше одного раза
-	for (int i = (int)Path_To_Check.path_rules.size() - 1; i >= 0; i--)
-	{
-		for (int j = (int)Path_To_Check.path_rules.size() - 1; j >= 0; j--)
-		{
-			if (i != j && Path_To_Check.path_rules[i] == Path_To_Check.path_rules[j]
-				&& GotNonTerminal(Path_To_Check.path_rules[i].right_part) /*Path_To_Check.path_rules[i].right_part[0] != "[EPS]"*/) return false;
-		}
-	}
-
 	return true;
 }
 
@@ -842,7 +832,8 @@ std::vector<std::string> CF_Grammar::GenerateMultipleWords(const int& Amount, co
 	while (words.size() < Amount)
 	{
 		words_size = (int)words.size();
-		result.push_back(GenerateWord(Max_Length));
+		temp_str = GenerateWord(Max_Length);
+		result.push_back(temp_str);
 
 		if (words_size == words.size()) iterations++;
 		else iterations = 0;
@@ -862,7 +853,6 @@ std::vector<std::string> CF_Grammar::GenerateMultipleWords(const int& Amount, co
 			break;
 		}
 	}
-
 	return result;
 }
 
@@ -971,7 +961,6 @@ bool CF_Grammar::CYK_Alg_Modified(const std::string& Word)
 			h[IndexOfRule(i_rule)][i][i][0] = true;
 		}
 	}
-
 	for (int m = 0; m < word.size(); m++)
 	{
 		for (int i = 0; i < word.size(); i++)
@@ -1281,7 +1270,12 @@ void EquivalenceTest(const CF_Grammar& Grammar1, const CF_Grammar& Grammar2, con
 		{
 			std::cout << "Second grammar can't produce these words:" << std::endl;
 			for (std::string i_string : incorrect_words)
-				std::cout << i_string << std::endl;
+			{
+				if (i_string == "")
+					std::cout << "' '" << std::endl;
+				else
+					std::cout << i_string << std::endl;
+			}
 			break;
 		}
 		else
