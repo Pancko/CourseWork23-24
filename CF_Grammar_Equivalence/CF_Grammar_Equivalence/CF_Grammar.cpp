@@ -966,7 +966,7 @@ bool CF_Grammar::CYK_Alg_Modified(const std::string& Word)
 		for (int i = 0; i < word.size(); i++)
 		{
 			j = i + m;
-			for (int times = 0; times < 2; times++)
+			for (int times = 0; times <= non_terminals.size(); times++)
 			{
 				for (Rule i_rule : rules)
 				{

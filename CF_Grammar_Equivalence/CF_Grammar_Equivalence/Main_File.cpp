@@ -6,8 +6,8 @@ int main()
 {
 	srand((unsigned int)time(NULL));
 
-	std::string Filename1 = "Grammar1.txt";
-	std::string Filename2 = "Grammar2.txt";
+	std::string Filename1 = "Grammar9.txt";
+	std::string Filename2 = "Grammar10.txt";
 
 	CF_Grammar grammar1;
 	CF_Grammar grammar2;
@@ -23,7 +23,7 @@ int main()
 	std::cout << std::endl << "Grammar 2:" << std::endl;
 	grammar2.PrintGrammar(IsDebug, ShowPath);
 
-	EquivalenceTest(grammar1, grammar2, 50);
+	EquivalenceTest(grammar1, grammar2, 10);
 	
 	return 0;
 }
