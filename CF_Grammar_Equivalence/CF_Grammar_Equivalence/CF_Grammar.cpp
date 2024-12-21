@@ -129,7 +129,7 @@ void CF_Grammar::AnalyzeNonTerminals()
 {
 	GenerateBasicPathes();
 
-	//GeneratePathes();
+	//GeneratePathes(); если хочетс€ сгенерировать большое количество выводов
 
 	FindingBadNonTerminals();
 
@@ -705,7 +705,7 @@ void CF_Grammar::PrintGrammar(bool IsDebug, bool ShowPath)
 
 //=============== √енераци€ рандомных слов и взаимодействие со словами ===================================
 
-std::string CF_Grammar::GenerateWord(const int& Max_Length)
+std::string CF_Grammar::GenerateWord(int Max_Length)
 {
 	std::string result;
 	std::vector<std::string> word;
@@ -822,7 +822,7 @@ std::string CF_Grammar::GenerateWord(const int& Max_Length)
 	return result;
 }
 
-std::vector<std::string> CF_Grammar::GenerateMultipleWords(const int& Amount, const int& Max_Length)
+std::vector<std::string> CF_Grammar::GenerateMultipleWords(int Amount, int Max_Length)
 {
 	std::vector<std::string> result;
 	int iterations = 0;
@@ -891,12 +891,12 @@ bool CF_Grammar::CYK_Alg_Modified(const std::string& Word)
 
 	// a[A][i][j] = true, если из нетерминала ј можно вывести подстроку word[i...j - 1]
 	std::vector<std::vector<std::vector<bool>>> a;
-	a.resize(non_terminals.size() + terminals.size());
-	for (int i = 0; i < non_terminals.size() + terminals.size(); i++)
+	a.resize(non_terminals.size() + terminals.size() + 1);
+	for (int i = 0; i <= non_terminals.size() + terminals.size(); i++)
 	{
-		a[i].resize(2 * word.size());
-		for (int j = 0; j < 2 * word.size(); j++)
-			a[i][j].resize(2 * word.size());
+		a[i].resize(2 * word.size() + 1);
+		for (int j = 0; j <= 2 * word.size(); j++)
+			a[i][j].resize(2 * word.size() + 1);
 	}
 
 	for (Rule i_rule : rules)
@@ -906,14 +906,14 @@ bool CF_Grammar::CYK_Alg_Modified(const std::string& Word)
 
 	// h[A -> alpha][i][j][k] = true, если из префикса длины k правила A -> alpha можно вывести подстроку word[i...j - 1]
 	std::vector<std::vector<std::vector<std::vector<bool>>>> h;
-	h.resize(rules.size());
-	for (int i = 0; i < rules.size(); i++)
+	h.resize(rules.size() + 1);
+	for (int i = 0; i <= rules.size(); i++)
 	{
-		h[i].resize(2 * word.size());
-		for (int j = 0; j < 2 * word.size(); j++)
+		h[i].resize(2 * word.size() + 1);
+		for (int j = 0; j <= 2 * word.size(); j++)
 		{
-			h[i][j].resize(2 * word.size());
-			for (int k = 0; k < 2 * word.size(); k++)
+			h[i][j].resize(2 * word.size() + 1);
+			for (int k = 0; k <= 2 * word.size(); k++)
 				h[i][j][k].resize(max_right_part_length + 1);
 		}
 	}
@@ -1056,13 +1056,6 @@ bool Rule::operator==(const Rule& Object) const
 	return true;
 }
 
-bool Rule::operator<(const Rule& Object) const
-{
-	if (this->left_part < Object.left_part)
-		return true;
-	return false;
-}
-
 Rule::Rule()
 {
 	terminals_count = 0;
@@ -1112,12 +1105,11 @@ bool Path::operator+=(const Path& Object)
 	word = new_path.word;
 	path_words = new_path.path_words;
 	path_rules = new_path.path_rules;
-	//pathes_used.push_back(Object);
 
 	return true;
 }
 
-Path Path::ApplyPath(const Path& Object, const int& position)
+Path Path::ApplyPath(const Path& Object, int position)
 {
 	Path new_path;
 	int pos = 0;
@@ -1125,7 +1117,6 @@ Path Path::ApplyPath(const Path& Object, const int& position)
 	new_path = *this;
 	Path obj = Object;
 	new_path.length += Object.length;
-	//new_path.pathes_used.push_back(Object);
 	for (Rule i_rule : Object.path_rules)
 	{
 		for (pos = 0; pos < std::min(obj.path_words[place].size(), obj.path_words[place + 1].size()); pos++)
@@ -1177,7 +1168,7 @@ Path::~Path()
 }
 
 //=============== ѕрименение правила к слову ===============================================================
-std::vector<std::string> ApplyRule(const std::vector<std::string>& String, const Rule& Rule, const int& Non_Terminal_Number)
+std::vector<std::string> ApplyRule(const std::vector<std::string>& String, const Rule& Rule, int Non_Terminal_Number)
 {
 	std::vector<std::string> result = String;
 	std::vector<std::string> replace_string;
@@ -1231,7 +1222,7 @@ bool VecContStr(const std::vector<std::string>& Vector, const std::string& Strin
 }
 
 //=============== √енераци€ и проверка слов двух грамматик =================================================
-void EquivalenceTest(const CF_Grammar& Grammar1, const CF_Grammar& Grammar2, const int& Words_Lenght)
+void EquivalenceTest(const CF_Grammar& Grammar1, const CF_Grammar& Grammar2, int Words_Lenght)
 {
 	CF_Grammar grammar1 = Grammar1;
 	CF_Grammar grammar2 = Grammar2;

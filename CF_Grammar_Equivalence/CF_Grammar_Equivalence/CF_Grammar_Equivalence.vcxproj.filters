@@ -30,4 +30,51 @@
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="Grammar1.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+    <Text Include="Grammar2.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+    <Text Include="Grammar3.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+    <Text Include="Grammar4.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+    <Text Include="Grammar5.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+    <Text Include="Grammar6.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+    <Text Include="Grammar7.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+    <Text Include="Grammar8.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+    <Text Include="Grammar9.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+    <Text Include="Grammar10.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+    <Text Include="Grammar11.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+    <Text Include="Grammar12.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+    <Text Include="Grammar13.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+    <Text Include="Grammar14.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+    <Text Include="Grammar15.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
+  </ItemGroup>
 </Project>

@@ -138,6 +138,23 @@
     <ClInclude Include="CF_Grammar.h" />
     <ClInclude Include="Timer.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="Grammar1.txt" />
+    <Text Include="Grammar10.txt" />
+    <Text Include="Grammar11.txt" />
+    <Text Include="Grammar12.txt" />
+    <Text Include="Grammar13.txt" />
+    <Text Include="Grammar14.txt" />
+    <Text Include="Grammar15.txt" />
+    <Text Include="Grammar2.txt" />
+    <Text Include="Grammar3.txt" />
+    <Text Include="Grammar4.txt" />
+    <Text Include="Grammar5.txt" />
+    <Text Include="Grammar6.txt" />
+    <Text Include="Grammar7.txt" />
+    <Text Include="Grammar8.txt" />
+    <Text Include="Grammar9.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -22,8 +22,6 @@ struct Rule
 
 	bool operator==(const Rule& Object) const;
 
-	bool operator<(const Rule& Object) const;
-
 	Rule();
 	Rule(std::string Left_Part, std::vector<std::string> Right_Part);
 	~Rule();
@@ -39,7 +37,7 @@ struct Path
 
 	bool operator==(const Path& Object) const;
 	bool operator+=(const Path& Object);
-	Path ApplyPath(const Path& Object, const int& position = 0);
+	Path ApplyPath(const Path& Object, int position = 0);
 
 	void PrintPath(bool IsDebug = false);
 
@@ -112,9 +110,9 @@ public:
 
 
 	// Генерация случайного терминального слова
-	std::string GenerateWord(const int& Max_Length);
+	std::string GenerateWord(int Max_Length);
 	// Генерация нескольких случайных терминальных слов с заданной максимальной длиной
-	std::vector<std::string> GenerateMultipleWords(const int& Amount, const int& Max_Length);
+	std::vector<std::string> GenerateMultipleWords(int Amount, int Max_Length);
 
 	// Печать сгенерированных слов
 	void PrintWords(bool IsDebug = false);
@@ -138,11 +136,11 @@ public:
 };
 
 // Применение правила к слову
-std::vector<std::string> ApplyRule(const std::vector<std::string>& String, const Rule& Rule, const int& Non_Terminal_Number = 0);
+std::vector<std::string> ApplyRule(const std::vector<std::string>& String, const Rule& Rule, int Non_Terminal_Number = 0);
 // Совмещение двух наборов правил
 std::map<std::string, std::vector<Path>> PathConvergence(const std::map<std::string, std::vector<Path>>& First_Object, const std::map<std::string, std::vector<Path>>& Second_Object);
 // Содержится ли строка в векторе
 bool VecContStr(const std::vector<std::string>& Vector, const std::string& String);
 
 // Генерация и проверка выводимости слов в двух грамматиках методом Кока-Янгера-Касами
-void EquivalenceTest(const CF_Grammar& Grammar1, const CF_Grammar& Grammar2, const int& Words_Lenght = 10);
+void EquivalenceTest(const CF_Grammar& Grammar1, const CF_Grammar& Grammar2, int Words_Lenght = 10);
