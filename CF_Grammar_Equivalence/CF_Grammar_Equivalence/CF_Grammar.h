@@ -1,5 +1,5 @@
-// ТВГУ ПМиК ФИиИТ 2024
-// Андреев Семен Витальевич
+// РўР’Р“РЈ РџРњРёРљ Р¤РРёРРў 2024
+// РђРЅРґСЂРµРµРІ РЎРµРјРµРЅ Р’РёС‚Р°Р»СЊРµРІРёС‡
 #pragma once
 #include <iostream>
 #include <iomanip>
@@ -13,27 +13,28 @@
 #include <algorithm>
 #include "Timer.h"
 
-// Правило из КС-грамматики
+// РџСЂР°РІРёР»Рѕ РёР· РљРЎ-РіСЂР°РјРјР°С‚РёРєРё
 struct Rule
 {
-	std::string left_part;					// Левая часть правила
-	std::vector<std::string> right_part;	// Правая часть правила
-	size_t terminals_count = 0;				// Счетчик терминалов
+	std::string left_part;					// Р›РµРІР°СЏ С‡Р°СЃС‚СЊ РїСЂР°РІРёР»Р°
+	std::vector<std::string> right_part;	// РџСЂР°РІР°СЏ С‡Р°СЃС‚СЊ РїСЂР°РІРёР»Р°
+	size_t terminals_count = 0;				// РЎС‡РµС‚С‡РёРє С‚РµСЂРјРёРЅР°Р»РѕРІ
 
 	bool operator==(const Rule& Object) const;
 
 	Rule();
 	Rule(std::string Left_Part, std::vector<std::string> Right_Part);
 	~Rule();
+	void clear();
 };
 
-// Путь из нетерминала до определенного слова
+// РџСѓС‚СЊ РёР· РЅРµС‚РµСЂРјРёРЅР°Р»Р° РґРѕ РѕРїСЂРµРґРµР»РµРЅРЅРѕРіРѕ СЃР»РѕРІР°
 struct Path
 {
-	int length;											// Длина пути
-	std::vector<Rule> path_rules;						// Правила
-	std::vector<std::vector<std::string>> path_words;	// Последовательность слов
-	std::vector<std::string> word;						// Конечное слово
+	int length;											// Р”Р»РёРЅР° РїСѓС‚Рё
+	std::vector<Rule> path_rules;						// РџСЂР°РІРёР»Р°
+	std::vector<std::vector<std::string>> path_words;	// РџРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚СЊ СЃР»РѕРІ
+	std::vector<std::string> word;						// РљРѕРЅРµС‡РЅРѕРµ СЃР»РѕРІРѕ
 
 	bool operator==(const Path& Object) const;
 	bool operator+=(const Path& Object);
@@ -43,104 +44,108 @@ struct Path
 
 	Path();
 	~Path();
+	void clear();
 };
 
-// Подстановка всех возможных терминальных слов в каждый нетерминал правила (Для таблицы динамического программирования)
+// РџРѕРґСЃС‚Р°РЅРѕРІРєР° РІСЃРµС… РІРѕР·РјРѕР¶РЅС‹С… С‚РµСЂРјРёРЅР°Р»СЊРЅС‹С… СЃР»РѕРІ РІ РєР°Р¶РґС‹Р№ РЅРµС‚РµСЂРјРёРЅР°Р» РїСЂР°РІРёР»Р° (Р”Р»СЏ С‚Р°Р±Р»РёС†С‹ РґРёРЅР°РјРёС‡РµСЃРєРѕРіРѕ РїСЂРѕРіСЂР°РјРјРёСЂРѕРІР°РЅРёСЏ)
 struct PathPermutations
 {
 	Rule rule;
 	std::vector<std::pair<std::string, std::vector<std::string>>> right_part;
+	~PathPermutations();
+	void clear();
 };
 
-// Основной класс - КС-грамматика
+// РћСЃРЅРѕРІРЅРѕР№ РєР»Р°СЃСЃ - РљРЎ-РіСЂР°РјРјР°С‚РёРєР°
 class CF_Grammar
 {
 private:
 	std::string starting_non_terminal;						// S
 	std::map<std::string, std::vector<Path>> non_terminals; // N
-	std::map<std::string, Path> shortest_path;				// Кратчайшие пути для нетерминалов
-	std::set<std::string> bad_non_terminals;				// "Плохие" нетерминалы
+	std::map<std::string, Path> shortest_path;				// РљСЂР°С‚С‡Р°Р№С€РёРµ РїСѓС‚Рё РґР»СЏ РЅРµС‚РµСЂРјРёРЅР°Р»РѕРІ
+	std::set<std::string> bad_non_terminals;				// "РџР»РѕС…РёРµ" РЅРµС‚РµСЂРјРёРЅР°Р»С‹
 	std::set<std::string> terminals;						// Sigma
 	std::vector<Rule> rules;								// P
-	int pathes_amount = 0;                                  // Количество путей
-	std::set<std::string> words;							// Сгенерированныые слова
+	int pathes_amount = 0;                                  // РљРѕР»РёС‡РµСЃС‚РІРѕ РїСѓС‚РµР№
+	std::set<std::string> words;							// РЎРіРµРЅРµСЂРёСЂРѕРІР°РЅРЅС‹С‹Рµ СЃР»РѕРІР°
 
 public:
 	CF_Grammar();
 	~CF_Grammar();
+	void clear();
 
-	// Считывание грамматики из файла
+	// РЎС‡РёС‚С‹РІР°РЅРёРµ РіСЂР°РјРјР°С‚РёРєРё РёР· С„Р°Р№Р»Р°
 	void ReadFromFile(const std::string& File_Name);
-	// Получение правила из строки
+	// РџРѕР»СѓС‡РµРЅРёРµ РїСЂР°РІРёР»Р° РёР· СЃС‚СЂРѕРєРё
 	Rule GetRuleFromString(const std::string& String);
-	// Добавление правила в грамматику
+	// Р”РѕР±Р°РІР»РµРЅРёРµ РїСЂР°РІРёР»Р° РІ РіСЂР°РјРјР°С‚РёРєСѓ
 	void AddRule(const Rule& New_Rule);
 
 
-	// Генерация путей. Анализ и удаление циклов, бесполезных нетерминалов
+	// Р“РµРЅРµСЂР°С†РёСЏ РїСѓС‚РµР№. РђРЅР°Р»РёР· Рё СѓРґР°Р»РµРЅРёРµ С†РёРєР»РѕРІ, Р±РµСЃРїРѕР»РµР·РЅС‹С… РЅРµС‚РµСЂРјРёРЅР°Р»РѕРІ
 	void AnalyzeNonTerminals();
-	// Быстрая генерация путей, нахождение первых быстрых выводов
+	// Р‘С‹СЃС‚СЂР°СЏ РіРµРЅРµСЂР°С†РёСЏ РїСѓС‚РµР№, РЅР°С…РѕР¶РґРµРЅРёРµ РїРµСЂРІС‹С… Р±С‹СЃС‚СЂС‹С… РІС‹РІРѕРґРѕРІ
 	void GenerateBasicPathes();
-	// Полная генерация путей.
+	// РџРѕР»РЅР°СЏ РіРµРЅРµСЂР°С†РёСЏ РїСѓС‚РµР№.
 	void GeneratePathes();
-	// Генерация путей, доведение всех правил до терминальных слов
+	// Р“РµРЅРµСЂР°С†РёСЏ РїСѓС‚РµР№, РґРѕРІРµРґРµРЅРёРµ РІСЃРµС… РїСЂР°РІРёР» РґРѕ С‚РµСЂРјРёРЅР°Р»СЊРЅС‹С… СЃР»РѕРІ
 	std::map<std::string, std::vector<Path>> GenerateSubPath(const Path& Current_Path);
-	// Проверка пути на уникальность
+	// РџСЂРѕРІРµСЂРєР° РїСѓС‚Рё РЅР° СѓРЅРёРєР°Р»СЊРЅРѕСЃС‚СЊ
 	bool IsUniquePath(const Path& Path_To_Check, const Path& Added_Path, const std::map<std::string, std::vector<Path>>& Current_Pathes);
-	// Проверка правой части правила на удовлетворение условиям создания нового пути
+	// РџСЂРѕРІРµСЂРєР° РїСЂР°РІРѕР№ С‡Р°СЃС‚Рё РїСЂР°РІРёР»Р° РЅР° СѓРґРѕРІР»РµС‚РІРѕСЂРµРЅРёРµ СѓСЃР»РѕРІРёСЏРј СЃРѕР·РґР°РЅРёСЏ РЅРѕРІРѕРіРѕ РїСѓС‚Рё
 	bool IsRuleViable(const Rule& Current_Rule, const std::map<std::string, std::vector<Path>>& Non_Terminals);
 
 
-	// Вычисление и пометка "плохих" нетерминалов (из которых невозможно вывести полностью терминальное слово)
+	// Р’С‹С‡РёСЃР»РµРЅРёРµ Рё РїРѕРјРµС‚РєР° "РїР»РѕС…РёС…" РЅРµС‚РµСЂРјРёРЅР°Р»РѕРІ (РёР· РєРѕС‚РѕСЂС‹С… РЅРµРІРѕР·РјРѕР¶РЅРѕ РІС‹РІРµСЃС‚Рё РїРѕР»РЅРѕСЃС‚СЊСЋ С‚РµСЂРјРёРЅР°Р»СЊРЅРѕРµ СЃР»РѕРІРѕ)
 	void FindingBadNonTerminals();
-	// Удаление "плохих" нетерминалов
+	// РЈРґР°Р»РµРЅРёРµ "РїР»РѕС…РёС…" РЅРµС‚РµСЂРјРёРЅР°Р»РѕРІ
 	void DeleteBadNonTerminals();
-	// Заполнение вектора кратчайших путей для использования в генерации
+	// Р—Р°РїРѕР»РЅРµРЅРёРµ РІРµРєС‚РѕСЂР° РєСЂР°С‚С‡Р°Р№С€РёС… РїСѓС‚РµР№ РґР»СЏ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ РІ РіРµРЅРµСЂР°С†РёРё
 	void FillShortestPathes();
 
 
-	// Проверка наличия нетерминала в конце пути
+	// РџСЂРѕРІРµСЂРєР° РЅР°Р»РёС‡РёСЏ РЅРµС‚РµСЂРјРёРЅР°Р»Р° РІ РєРѕРЅС†Рµ РїСѓС‚Рё
 	bool GotNonTerminal(const Path& Current_Path);
-	// Проверка наличия нетерминала в слове
+	// РџСЂРѕРІРµСЂРєР° РЅР°Р»РёС‡РёСЏ РЅРµС‚РµСЂРјРёРЅР°Р»Р° РІ СЃР»РѕРІРµ
 	bool GotNonTerminal(const std::vector<std::string>& Word);
 
 
-	// Вывод грамматики в консоль
+	// Р’С‹РІРѕРґ РіСЂР°РјРјР°С‚РёРєРё РІ РєРѕРЅСЃРѕР»СЊ
 	void PrintGrammar(bool IsDebug = false, bool ShowPath = false);
 
 
-	// Генерация случайного терминального слова
+	// Р“РµРЅРµСЂР°С†РёСЏ СЃР»СѓС‡Р°Р№РЅРѕРіРѕ С‚РµСЂРјРёРЅР°Р»СЊРЅРѕРіРѕ СЃР»РѕРІР°
 	std::string GenerateWord(int Max_Length);
-	// Генерация нескольких случайных терминальных слов с заданной максимальной длиной
+	// Р“РµРЅРµСЂР°С†РёСЏ РЅРµСЃРєРѕР»СЊРєРёС… СЃР»СѓС‡Р°Р№РЅС‹С… С‚РµСЂРјРёРЅР°Р»СЊРЅС‹С… СЃР»РѕРІ СЃ Р·Р°РґР°РЅРЅРѕР№ РјР°РєСЃРёРјР°Р»СЊРЅРѕР№ РґР»РёРЅРѕР№
 	std::vector<std::string> GenerateMultipleWords(int Amount, int Max_Length);
 
-	// Печать сгенерированных слов
+	// РџРµС‡Р°С‚СЊ СЃРіРµРЅРµСЂРёСЂРѕРІР°РЅРЅС‹С… СЃР»РѕРІ
 	void PrintWords(bool IsDebug = false);
-	// Получение сгенерированных слов
+	// РџРѕР»СѓС‡РµРЅРёРµ СЃРіРµРЅРµСЂРёСЂРѕРІР°РЅРЅС‹С… СЃР»РѕРІ
 	std::set<std::string> GetWords();
 
 
-	// Алгоритм Кока-Янгера-Касами, модификация для произвольной грамматики
+	// РђР»РіРѕСЂРёС‚Рј РљРѕРєР°-РЇРЅРіРµСЂР°-РљР°СЃР°РјРё, РјРѕРґРёС„РёРєР°С†РёСЏ РґР»СЏ РїСЂРѕРёР·РІРѕР»СЊРЅРѕР№ РіСЂР°РјРјР°С‚РёРєРё
 	bool CYK_Alg_Modified(const std::string& Word);
 
 
-	// Вспомогательные функции для алгоритмов:
-	// Номер нетерминала либо терминала
+	// Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Рµ С„СѓРЅРєС†РёРё РґР»СЏ Р°Р»РіРѕСЂРёС‚РјРѕРІ:
+	// РќРѕРјРµСЂ РЅРµС‚РµСЂРјРёРЅР°Р»Р° Р»РёР±Рѕ С‚РµСЂРјРёРЅР°Р»Р°
 	int IndexOfNonTerminal(const std::string& Non_Terminal);
-	// Номер правила
+	// РќРѕРјРµСЂ РїСЂР°РІРёР»Р°
 	int IndexOfRule(const Rule& Current_Rule);
-	// Приведение вектора строк к строке
+	// РџСЂРёРІРµРґРµРЅРёРµ РІРµРєС‚РѕСЂР° СЃС‚СЂРѕРє Рє СЃС‚СЂРѕРєРµ
 	std::string VectorToString(const std::vector<std::string>& Object);
-	// Получение всех правил данного нетерминала
+	// РџРѕР»СѓС‡РµРЅРёРµ РІСЃРµС… РїСЂР°РІРёР» РґР°РЅРЅРѕРіРѕ РЅРµС‚РµСЂРјРёРЅР°Р»Р°
 	std::vector<Rule> NonTerminalRules(const std::string& Non_Terminal);
 };
 
-// Применение правила к слову
+// РџСЂРёРјРµРЅРµРЅРёРµ РїСЂР°РІРёР»Р° Рє СЃР»РѕРІСѓ
 std::vector<std::string> ApplyRule(const std::vector<std::string>& String, const Rule& Rule, int Non_Terminal_Number = 0);
-// Совмещение двух наборов правил
+// РЎРѕРІРјРµС‰РµРЅРёРµ РґРІСѓС… РЅР°Р±РѕСЂРѕРІ РїСЂР°РІРёР»
 std::map<std::string, std::vector<Path>> PathConvergence(const std::map<std::string, std::vector<Path>>& First_Object, const std::map<std::string, std::vector<Path>>& Second_Object);
-// Содержится ли строка в векторе
+// РЎРѕРґРµСЂР¶РёС‚СЃСЏ Р»Рё СЃС‚СЂРѕРєР° РІ РІРµРєС‚РѕСЂРµ
 bool VecContStr(const std::vector<std::string>& Vector, const std::string& String);
 
-// Генерация и проверка выводимости слов в двух грамматиках методом Кока-Янгера-Касами
+// Р“РµРЅРµСЂР°С†РёСЏ Рё РїСЂРѕРІРµСЂРєР° РІС‹РІРѕРґРёРјРѕСЃС‚Рё СЃР»РѕРІ РІ РґРІСѓС… РіСЂР°РјРјР°С‚РёРєР°С… РјРµС‚РѕРґРѕРј РљРѕРєР°-РЇРЅРіРµСЂР°-РљР°СЃР°РјРё
 void EquivalenceTest(const CF_Grammar& Grammar1, const CF_Grammar& Grammar2, int Words_Lenght = 10);

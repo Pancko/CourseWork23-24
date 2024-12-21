@@ -1,5 +1,5 @@
-// ТВГУ ПМиК ФИиИТ 2024
-// Андреев Семен Витальевич
+// РўР’Р“РЈ РџРњРёРљ Р¤РРёРРў 2024
+// РђРЅРґСЂРµРµРІ РЎРµРјРµРЅ Р’РёС‚Р°Р»СЊРµРІРёС‡
 #include "CF_Grammar.h"
 
 CF_Grammar::CF_Grammar()
@@ -8,12 +8,45 @@ CF_Grammar::CF_Grammar()
 
 CF_Grammar::~CF_Grammar()
 {
-	non_terminals.clear();
-	terminals.clear();
-	rules.clear();
+	clear();
 }
 
-//=============== Считывание грамматики из файла и создание объекта =====================================
+void CF_Grammar::clear()
+{
+	starting_non_terminal.clear();
+	starting_non_terminal.shrink_to_fit();
+
+	for (auto const& [key, val] : non_terminals)
+	{
+		for (Path i_path : val)
+			i_path.clear();
+		val.~vector();
+		key.~basic_string();
+	}
+	non_terminals.clear();
+
+	for (auto& [key, val] : shortest_path)
+	{
+		val.clear();
+		key.~basic_string();
+	}
+	shortest_path.clear();
+
+	bad_non_terminals.clear();
+
+	terminals.clear();
+
+	for (Rule& r : rules)
+		r.clear();
+	rules.clear();
+	rules.shrink_to_fit();
+
+	pathes_amount = 0;
+
+	words.clear();
+}
+
+//=============== РЎС‡РёС‚С‹РІР°РЅРёРµ РіСЂР°РјРјР°С‚РёРєРё РёР· С„Р°Р№Р»Р° Рё СЃРѕР·РґР°РЅРёРµ РѕР±СЉРµРєС‚Р° =====================================
 
 void CF_Grammar::ReadFromFile(const std::string& File_Name)
 {
@@ -25,7 +58,7 @@ void CF_Grammar::ReadFromFile(const std::string& File_Name)
 
 	while (std::getline(file, current_string))
 	{
-		// Добавить несколько правил, если они написаны через '|'
+		// Р”РѕР±Р°РІРёС‚СЊ РЅРµСЃРєРѕР»СЊРєРѕ РїСЂР°РІРёР», РµСЃР»Рё РѕРЅРё РЅР°РїРёСЃР°РЅС‹ С‡РµСЂРµР· '|'
 		if (current_string.find('|') != std::string::npos)
 		{
 			position = current_string.find("->") + 2;
@@ -123,13 +156,13 @@ void CF_Grammar::AddRule(const Rule& New_Rule)
 	rules.push_back(rule_to_add);
 }
 
-//=============== Анализ полученной грамматики, составление путей для нетерминалов ======================
+//=============== РђРЅР°Р»РёР· РїРѕР»СѓС‡РµРЅРЅРѕР№ РіСЂР°РјРјР°С‚РёРєРё, СЃРѕСЃС‚Р°РІР»РµРЅРёРµ РїСѓС‚РµР№ РґР»СЏ РЅРµС‚РµСЂРјРёРЅР°Р»РѕРІ ======================
 
 void CF_Grammar::AnalyzeNonTerminals()
 {
 	GenerateBasicPathes();
 
-	//GeneratePathes(); если хочется сгенерировать большое количество выводов
+	//GeneratePathes(); РµСЃР»Рё С…РѕС‡РµС‚СЃСЏ СЃРіРµРЅРµСЂРёСЂРѕРІР°С‚СЊ Р±РѕР»СЊС€РѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ РІС‹РІРѕРґРѕРІ
 
 	FindingBadNonTerminals();
 
@@ -149,14 +182,14 @@ void CF_Grammar::GenerateBasicPathes()
 	std::string temp_str;
 	int position = 0;
 
-	for (Rule i_rule : rules) // Базис. Заполнить массив правил
+	for (Rule i_rule : rules) // Р‘Р°Р·РёСЃ. Р—Р°РїРѕР»РЅРёС‚СЊ РјР°СЃСЃРёРІ РїСЂР°РІРёР»
 	{
 		pathes.push_back(PathPermutations(i_rule));
 
 		for (std::string i_string : i_rule.right_part)
 			pathes[IndexOfRule(i_rule)].right_part.push_back(std::map<std::string, std::vector<std::string>>::value_type(i_string, NULL));
 
-		if (!GotNonTerminal(i_rule.right_part)) // Если правило порождает нетерминальное слово
+		if (!GotNonTerminal(i_rule.right_part)) // Р•СЃР»Рё РїСЂР°РІРёР»Рѕ РїРѕСЂРѕР¶РґР°РµС‚ РЅРµС‚РµСЂРјРёРЅР°Р»СЊРЅРѕРµ СЃР»РѕРІРѕ
 		{
 			if (!new_found_pathes.contains(i_rule.left_part))
 				new_found_pathes.emplace(std::map<std::string, std::vector<Path>>::value_type(i_rule.left_part, NULL));
@@ -183,11 +216,11 @@ void CF_Grammar::GenerateBasicPathes()
 		}
 	}
 
-	while (new_found_pathes.size() > 0) // Рекуррентный шаг, создаем пути пока находим новые (только для новых нетерминалов)
+	while (new_found_pathes.size() > 0) // Р РµРєСѓСЂСЂРµРЅС‚РЅС‹Р№ С€Р°Рі, СЃРѕР·РґР°РµРј РїСѓС‚Рё РїРѕРєР° РЅР°С…РѕРґРёРј РЅРѕРІС‹Рµ (С‚РѕР»СЊРєРѕ РґР»СЏ РЅРѕРІС‹С… РЅРµС‚РµСЂРјРёРЅР°Р»РѕРІ)
 	{
 		for (Rule i_rule : rules)
 		{
-			// Если для нетерминала ещё не найден ни один вывод
+			// Р•СЃР»Рё РґР»СЏ РЅРµС‚РµСЂРјРёРЅР°Р»Р° РµС‰С‘ РЅРµ РЅР°Р№РґРµРЅ РЅРё РѕРґРёРЅ РІС‹РІРѕРґ
 			if (IsRuleViable(i_rule, new_found_pathes) && !analyzed_non_terminlas.contains(i_rule.left_part))
 			{
 				position = 0;
@@ -201,7 +234,7 @@ void CF_Grammar::GenerateBasicPathes()
 							for (std::string word_str : i_path.word)
 								temp_str += word_str;
 
-							if (!VecContStr(pathes[IndexOfRule(i_rule)].right_part[position].second, temp_str)) // Если такой путь еще не был применен к нетерминалу
+							if (!VecContStr(pathes[IndexOfRule(i_rule)].right_part[position].second, temp_str)) // Р•СЃР»Рё С‚Р°РєРѕР№ РїСѓС‚СЊ РµС‰Рµ РЅРµ Р±С‹Р» РїСЂРёРјРµРЅРµРЅ Рє РЅРµС‚РµСЂРјРёРЅР°Р»Сѓ
 							{
 								current_path.length = 1;
 								current_path.path_rules.push_back(i_rule);
@@ -213,8 +246,8 @@ void CF_Grammar::GenerateBasicPathes()
 
 								if (IsUniquePath(current_path, i_path, non_terminals))
 								{
-									pathes[IndexOfRule(i_rule)].right_part[position].second.push_back(temp_str); // Добавляем новый вариант в таблицу
-									if (GotNonTerminal(current_path)) // Генерируем новые пути
+									pathes[IndexOfRule(i_rule)].right_part[position].second.push_back(temp_str); // Р”РѕР±Р°РІР»СЏРµРј РЅРѕРІС‹Р№ РІР°СЂРёР°РЅС‚ РІ С‚Р°Р±Р»РёС†Сѓ
+									if (GotNonTerminal(current_path)) // Р“РµРЅРµСЂРёСЂСѓРµРј РЅРѕРІС‹Рµ РїСѓС‚Рё
 									{
 										current_new_found_pathes = PathConvergence(current_new_found_pathes, GenerateSubPath(current_path));
 										if (current_new_found_pathes.size() != 0)
@@ -247,7 +280,7 @@ void CF_Grammar::GenerateBasicPathes()
 		current_new_found_pathes.clear();
 	}
 
-	// Находим все уже известные пустые выводы
+	// РќР°С…РѕРґРёРј РІСЃРµ СѓР¶Рµ РёР·РІРµСЃС‚РЅС‹Рµ РїСѓСЃС‚С‹Рµ РІС‹РІРѕРґС‹
 	analyzed_non_terminlas.clear();
 	new_found_pathes.clear();
 	for (auto& i_element : non_terminals)
@@ -266,7 +299,7 @@ void CF_Grammar::GenerateBasicPathes()
 
 	current_new_found_pathes = new_found_pathes;
 
-	while (current_new_found_pathes.size() > 0) // Найти все пустые выводы
+	while (current_new_found_pathes.size() > 0) // РќР°Р№С‚Рё РІСЃРµ РїСѓСЃС‚С‹Рµ РІС‹РІРѕРґС‹
 	{
 		current_new_found_pathes.clear();
 		for (Rule i_rule : rules)
@@ -317,14 +350,14 @@ void CF_Grammar::GeneratePathes()
 	std::string temp_str;
 	int position = 0;
 
-	for (Rule i_rule : rules) // Базис. Заполнить массив правил
+	for (Rule i_rule : rules) // Р‘Р°Р·РёСЃ. Р—Р°РїРѕР»РЅРёС‚СЊ РјР°СЃСЃРёРІ РїСЂР°РІРёР»
 	{
 		pathes.push_back(PathPermutations(i_rule));
 
 		for (std::string i_string : i_rule.right_part)
 			pathes[IndexOfRule(i_rule)].right_part.push_back(std::map<std::string, std::vector<std::string>>::value_type(i_string, NULL));
 
-		if (!GotNonTerminal(i_rule.right_part)) // Если правило порождает нетерминальное слово
+		if (!GotNonTerminal(i_rule.right_part)) // Р•СЃР»Рё РїСЂР°РІРёР»Рѕ РїРѕСЂРѕР¶РґР°РµС‚ РЅРµС‚РµСЂРјРёРЅР°Р»СЊРЅРѕРµ СЃР»РѕРІРѕ
 		{
 			if (!new_found_pathes.contains(i_rule.left_part))
 				new_found_pathes.emplace(std::map<std::string, std::vector<Path>>::value_type(i_rule.left_part, NULL));
@@ -351,7 +384,7 @@ void CF_Grammar::GeneratePathes()
 	}
 	int i = 1;
 	Timer t;
-	while (new_found_pathes.size() > 0) // Рекуррентный шаг, создаем пути пока находим новые
+	while (new_found_pathes.size() > 0) // Р РµРєСѓСЂСЂРµРЅС‚РЅС‹Р№ С€Р°Рі, СЃРѕР·РґР°РµРј РїСѓС‚Рё РїРѕРєР° РЅР°С…РѕРґРёРј РЅРѕРІС‹Рµ
 	{
 		std::cout << "Generating pathes step " << i << ", found new pathes for non-terminals: ";
 
@@ -376,7 +409,7 @@ void CF_Grammar::GeneratePathes()
 							for (std::string word_str : i_path.word)
 								temp_str += word_str;
 
-							if (!VecContStr(pathes[IndexOfRule(i_rule)].right_part[position].second, temp_str)) // Если такой путь еще не был применен к нетерминалу
+							if (!VecContStr(pathes[IndexOfRule(i_rule)].right_part[position].second, temp_str)) // Р•СЃР»Рё С‚Р°РєРѕР№ РїСѓС‚СЊ РµС‰Рµ РЅРµ Р±С‹Р» РїСЂРёРјРµРЅРµРЅ Рє РЅРµС‚РµСЂРјРёРЅР°Р»Сѓ
 							{
 								current_path.length = 1;
 								current_path.path_rules.push_back(i_rule);
@@ -388,8 +421,8 @@ void CF_Grammar::GeneratePathes()
 
 								if (IsUniquePath(current_path, i_path, non_terminals))
 								{
-									pathes[IndexOfRule(i_rule)].right_part[position].second.push_back(temp_str); // Добавляем новый вариант в таблицу
-									if (GotNonTerminal(current_path)) // Генерируем новые пути
+									pathes[IndexOfRule(i_rule)].right_part[position].second.push_back(temp_str); // Р”РѕР±Р°РІР»СЏРµРј РЅРѕРІС‹Р№ РІР°СЂРёР°РЅС‚ РІ С‚Р°Р±Р»РёС†Сѓ
+									if (GotNonTerminal(current_path)) // Р“РµРЅРµСЂРёСЂСѓРµРј РЅРѕРІС‹Рµ РїСѓС‚Рё
 										current_new_found_pathes = PathConvergence(current_new_found_pathes, GenerateSubPath(current_path));
 									else
 									{
@@ -430,11 +463,11 @@ std::map<std::string, std::vector<Path>> CF_Grammar::GenerateSubPath(const Path&
 	std::map<std::string, std::vector<Path>> result;
 	Path current_path;
 	std::map<std::string, std::vector<Path>> old_pathes = non_terminals;
-	for (std::string i_string : Current_Path.word)      // Рассматриваем символы в слове
+	for (std::string i_string : Current_Path.word)      // Р Р°СЃСЃРјР°С‚СЂРёРІР°РµРј СЃРёРјРІРѕР»С‹ РІ СЃР»РѕРІРµ
 	{
-		if (non_terminals.contains(i_string))           // Если символ является нетерминалом
+		if (non_terminals.contains(i_string))           // Р•СЃР»Рё СЃРёРјРІРѕР» СЏРІР»СЏРµС‚СЃСЏ РЅРµС‚РµСЂРјРёРЅР°Р»РѕРј
 		{
-			for (Path i_path : old_pathes[i_string])    // Пути этого нетерминала
+			for (Path i_path : old_pathes[i_string])    // РџСѓС‚Рё СЌС‚РѕРіРѕ РЅРµС‚РµСЂРјРёРЅР°Р»Р°
 			{
 				current_path = Current_Path;
 				current_path += i_path;
@@ -463,11 +496,11 @@ bool CF_Grammar::IsRuleViable(const Rule& Current_Rule, const std::map<std::stri
 
 	for (std::string i_string : Current_Rule.right_part)
 	{
-		if (i_string == Current_Rule.left_part) return false; // В правой части правила содержится тот же нетерминал (цикл)
+		if (i_string == Current_Rule.left_part) return false; // Р’ РїСЂР°РІРѕР№ С‡Р°СЃС‚Рё РїСЂР°РІРёР»Р° СЃРѕРґРµСЂР¶РёС‚СЃСЏ С‚РѕС‚ Р¶Рµ РЅРµС‚РµСЂРјРёРЅР°Р» (С†РёРєР»)
 
-		if (current_non_terminals.contains(i_string) && current_non_terminals[i_string].size() == 0) return false; // Нетерминал, у которого нет путей
+		if (current_non_terminals.contains(i_string) && current_non_terminals[i_string].size() == 0) return false; // РќРµС‚РµСЂРјРёРЅР°Р», Сѓ РєРѕС‚РѕСЂРѕРіРѕ РЅРµС‚ РїСѓС‚РµР№
 
-		if (current_non_terminals.contains(i_string)) found_viable_non_terminal = true; // Подходящий нетерминал
+		if (current_non_terminals.contains(i_string)) found_viable_non_terminal = true; // РџРѕРґС…РѕРґСЏС‰РёР№ РЅРµС‚РµСЂРјРёРЅР°Р»
 	}
 
 	return found_viable_non_terminal;
@@ -477,19 +510,19 @@ bool CF_Grammar::IsUniquePath(const Path& Path_To_Check, const Path& Added_Path,
 {
 	std::map<std::string, std::vector<Path>> current_pathes = Current_Pathes;
 
-	// Если путь с таким заключительным словом уже существует
+	// Р•СЃР»Рё РїСѓС‚СЊ СЃ С‚Р°РєРёРј Р·Р°РєР»СЋС‡РёС‚РµР»СЊРЅС‹Рј СЃР»РѕРІРѕРј СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚
 	for (Path i_path : current_pathes[Path_To_Check.path_rules[0].left_part])
 	{
 		if (i_path.word == Path_To_Check.word) return false;
 	}
 
-	// Если только что добавленный путь является опустошающим (то есть просто убирает нетерминал), то дальше можно не расследовать
+	// Р•СЃР»Рё С‚РѕР»СЊРєРѕ С‡С‚Рѕ РґРѕР±Р°РІР»РµРЅРЅС‹Р№ РїСѓС‚СЊ СЏРІР»СЏРµС‚СЃСЏ РѕРїСѓСЃС‚РѕС€Р°СЋС‰РёРј (С‚Рѕ РµСЃС‚СЊ РїСЂРѕСЃС‚Рѕ СѓР±РёСЂР°РµС‚ РЅРµС‚РµСЂРјРёРЅР°Р»), С‚Рѕ РґР°Р»СЊС€Рµ РјРѕР¶РЅРѕ РЅРµ СЂР°СЃСЃР»РµРґРѕРІР°С‚СЊ
 	if (Added_Path.path_rules.size() > 0 && Added_Path.word.size() == 0) return true;
 
 	return true;
 }
 
-//=============== Поиск и удаление "плохих" нетерминалов, получение кратчайших путей =====================
+//=============== РџРѕРёСЃРє Рё СѓРґР°Р»РµРЅРёРµ "РїР»РѕС…РёС…" РЅРµС‚РµСЂРјРёРЅР°Р»РѕРІ, РїРѕР»СѓС‡РµРЅРёРµ РєСЂР°С‚С‡Р°Р№С€РёС… РїСѓС‚РµР№ =====================
 
 void CF_Grammar::FindingBadNonTerminals()
 {
@@ -556,7 +589,7 @@ void CF_Grammar::DeleteBadNonTerminals()
 					new_non_terminals[i_element.first].erase(std::remove(new_non_terminals[i_element.first].begin(), 
 																			new_non_terminals[i_element.first].end(), i_path), new_non_terminals[i_element.first].end());
 
-					// Пересмотреть длину кратчайшего пути
+					// РџРµСЂРµСЃРјРѕС‚СЂРµС‚СЊ РґР»РёРЅСѓ РєСЂР°С‚С‡Р°Р№С€РµРіРѕ РїСѓС‚Рё
 					if (i_path.length == shortest_path[i_element.first].length)
 					{
 						shortest_path[i_element.first] = new_non_terminals[i_element.first][0];
@@ -596,7 +629,7 @@ void CF_Grammar::FillShortestPathes()
 	}
 }
 
-//=============== Анализ путей и слов на наличие в них нетерминалов ======================================
+//=============== РђРЅР°Р»РёР· РїСѓС‚РµР№ Рё СЃР»РѕРІ РЅР° РЅР°Р»РёС‡РёРµ РІ РЅРёС… РЅРµС‚РµСЂРјРёРЅР°Р»РѕРІ ======================================
 
 bool CF_Grammar::GotNonTerminal(const Path& Current_Path)
 {
@@ -622,7 +655,7 @@ bool CF_Grammar::GotNonTerminal(const std::vector<std::string>& Word)
 	return false;
 }
 
-//=============== Печать грамматики ======================================================================
+//=============== РџРµС‡Р°С‚СЊ РіСЂР°РјРјР°С‚РёРєРё ======================================================================
 
 void CF_Grammar::PrintGrammar(bool IsDebug, bool ShowPath)
 {
@@ -703,7 +736,7 @@ void CF_Grammar::PrintGrammar(bool IsDebug, bool ShowPath)
 	}
 }
 
-//=============== Генерация рандомных слов и взаимодействие со словами ===================================
+//=============== Р“РµРЅРµСЂР°С†РёСЏ СЂР°РЅРґРѕРјРЅС‹С… СЃР»РѕРІ Рё РІР·Р°РёРјРѕРґРµР№СЃС‚РІРёРµ СЃРѕ СЃР»РѕРІР°РјРё ===================================
 
 std::string CF_Grammar::GenerateWord(int Max_Length)
 {
@@ -718,13 +751,13 @@ std::string CF_Grammar::GenerateWord(int Max_Length)
 	size_t actual_length = 0;
 	bool non_terminal_found = 0;
 
-	// Начальный вид слова
+	// РќР°С‡Р°Р»СЊРЅС‹Р№ РІРёРґ СЃР»РѕРІР°
 	word.push_back(starting_non_terminal);
 	current_word_path.path_words.push_back(std::vector<std::string>({ starting_non_terminal }));
 	expected_length = shortest_path[starting_non_terminal].length;
 	actual_length = 1;
 
-	// Заполнить список правил, которые можно применить
+	// Р—Р°РїРѕР»РЅРёС‚СЊ СЃРїРёСЃРѕРє РїСЂР°РІРёР», РєРѕС‚РѕСЂС‹Рµ РјРѕР¶РЅРѕ РїСЂРёРјРµРЅРёС‚СЊ
 	for (Rule i_rule : rules)
 	{
 		if (i_rule.left_part != starting_non_terminal)
@@ -732,13 +765,13 @@ std::string CF_Grammar::GenerateWord(int Max_Length)
 		appliable_rules.push_back(i_rule);
 	}
 
-	// Применение случайных правил к случайным нетерминалам
+	// РџСЂРёРјРµРЅРµРЅРёРµ СЃР»СѓС‡Р°Р№РЅС‹С… РїСЂР°РІРёР» Рє СЃР»СѓС‡Р°Р№РЅС‹Рј РЅРµС‚РµСЂРјРёРЅР°Р»Р°Рј
 	while (expected_length < Max_Length)
 	{
-		// Рандомный выбор номера правила
+		// Р Р°РЅРґРѕРјРЅС‹Р№ РІС‹Р±РѕСЂ РЅРѕРјРµСЂР° РїСЂР°РІРёР»Р°
 		rule_to_use = rand() % appliable_rules.size();
 
-		// Применение правила
+		// РџСЂРёРјРµРЅРµРЅРёРµ РїСЂР°РІРёР»Р°
 		word = ApplyRule(word, appliable_rules[rule_to_use]);
 
 		current_word_path.path_rules.push_back(appliable_rules[rule_to_use]);
@@ -746,10 +779,10 @@ std::string CF_Grammar::GenerateWord(int Max_Length)
 		current_word_path.word = word;
 		current_word_path.length++;
 
-		// Проверка наличия нетерминалов в слове
+		// РџСЂРѕРІРµСЂРєР° РЅР°Р»РёС‡РёСЏ РЅРµС‚РµСЂРјРёРЅР°Р»РѕРІ РІ СЃР»РѕРІРµ
 		if (!GotNonTerminal(word)) break;
 
-		// Изменение ожидаемой длины слова
+		// РР·РјРµРЅРµРЅРёРµ РѕР¶РёРґР°РµРјРѕР№ РґР»РёРЅС‹ СЃР»РѕРІР°
 		actual_length += appliable_rules[rule_to_use].right_part.size() - 1;
 		expected_length += appliable_rules[rule_to_use].terminals_count;
 		expected_length -= shortest_path[appliable_rules[rule_to_use].left_part].length;
@@ -760,7 +793,7 @@ std::string CF_Grammar::GenerateWord(int Max_Length)
 		}
 		if (actual_length > Max_Length) break;
 
-		// Составление нового списка возможных для применения правил
+		// РЎРѕСЃС‚Р°РІР»РµРЅРёРµ РЅРѕРІРѕРіРѕ СЃРїРёСЃРєР° РІРѕР·РјРѕР¶РЅС‹С… РґР»СЏ РїСЂРёРјРµРЅРµРЅРёСЏ РїСЂР°РІРёР»
 		appliable_rules.clear();
 		for (std::string i_string : word)
 		{
@@ -783,7 +816,7 @@ std::string CF_Grammar::GenerateWord(int Max_Length)
 		temp_int = 0;
 	}
 
-	// Доведение слова до конца
+	// Р”РѕРІРµРґРµРЅРёРµ СЃР»РѕРІР° РґРѕ РєРѕРЅС†Р°
 	final_word = word;
 	while (GotNonTerminal(final_word))
 	{
@@ -871,7 +904,7 @@ std::set<std::string> CF_Grammar::GetWords()
 	return words;
 }
 
-//=============== Алгоритмы анализа принадлежности слова грамматике =======================================
+//=============== РђР»РіРѕСЂРёС‚РјС‹ Р°РЅР°Р»РёР·Р° РїСЂРёРЅР°РґР»РµР¶РЅРѕСЃС‚Рё СЃР»РѕРІР° РіСЂР°РјРјР°С‚РёРєРµ =======================================
 
 bool CF_Grammar::CYK_Alg_Modified(const std::string& Word)
 {
@@ -889,7 +922,7 @@ bool CF_Grammar::CYK_Alg_Modified(const std::string& Word)
 	if (word.size() == 0)
 		word = "[EPS]";
 
-	// a[A][i][j] = true, если из нетерминала А можно вывести подстроку word[i...j - 1]
+	// a[A][i][j] = true, РµСЃР»Рё РёР· РЅРµС‚РµСЂРјРёРЅР°Р»Р° Рђ РјРѕР¶РЅРѕ РІС‹РІРµСЃС‚Рё РїРѕРґСЃС‚СЂРѕРєСѓ word[i...j - 1]
 	std::vector<std::vector<std::vector<bool>>> a;
 	a.resize(non_terminals.size() + terminals.size() + 1);
 	for (int i = 0; i <= non_terminals.size() + terminals.size(); i++)
@@ -904,7 +937,7 @@ bool CF_Grammar::CYK_Alg_Modified(const std::string& Word)
 		max_right_part_length = std::max(max_right_part_length, (int)i_rule.right_part.size());
 	}
 
-	// h[A -> alpha][i][j][k] = true, если из префикса длины k правила A -> alpha можно вывести подстроку word[i...j - 1]
+	// h[A -> alpha][i][j][k] = true, РµСЃР»Рё РёР· РїСЂРµС„РёРєСЃР° РґР»РёРЅС‹ k РїСЂР°РІРёР»Р° A -> alpha РјРѕР¶РЅРѕ РІС‹РІРµСЃС‚Рё РїРѕРґСЃС‚СЂРѕРєСѓ word[i...j - 1]
 	std::vector<std::vector<std::vector<std::vector<bool>>>> h;
 	h.resize(rules.size() + 1);
 	for (int i = 0; i <= rules.size(); i++)
@@ -920,7 +953,7 @@ bool CF_Grammar::CYK_Alg_Modified(const std::string& Word)
 
 	for (int i = 0; i <= word.size(); i++)
 	{
-		// Выводимость из нетерминалов
+		// Р’С‹РІРѕРґРёРјРѕСЃС‚СЊ РёР· РЅРµС‚РµСЂРјРёРЅР°Р»РѕРІ
 		for (j = i + 1; j <= word.size() + 1; j++)
 		{
 			temp_str.clear();
@@ -949,7 +982,7 @@ bool CF_Grammar::CYK_Alg_Modified(const std::string& Word)
 			}
 		}
 		if (a[IndexOfNonTerminal(starting_non_terminal)][0][Word.size()]) return true;
-		// Выводимость терминалов
+		// Р’С‹РІРѕРґРёРјРѕСЃС‚СЊ С‚РµСЂРјРёРЅР°Р»РѕРІ
 		for (std::string i_string : terminals)
 		{
 			index_of_non_terminal = IndexOfNonTerminal(i_string);
@@ -1045,7 +1078,7 @@ std::vector<Rule> CF_Grammar::NonTerminalRules(const std::string& Non_Terminal)
 	return result;
 }
 
-//=============== Методы структуры "Правило" ==============================================================
+//=============== РњРµС‚РѕРґС‹ СЃС‚СЂСѓРєС‚СѓСЂС‹ "РџСЂР°РІРёР»Рѕ" ==============================================================
 
 bool Rule::operator==(const Rule& Object) const
 {
@@ -1073,11 +1106,19 @@ Rule::Rule(std::string Left_Part, std::vector<std::string> Right_Part)
 
 Rule::~Rule()
 {
-	terminals_count = 0;
-	right_part.clear();
+	clear();
 }
 
-//=============== Методы структуры "Путь" =================================================================
+void Rule::clear()
+{
+	terminals_count = 0;
+	left_part.clear();
+	left_part.shrink_to_fit();
+	right_part.clear();
+	right_part.shrink_to_fit();
+}
+
+//=============== РњРµС‚РѕРґС‹ СЃС‚СЂСѓРєС‚СѓСЂС‹ "РџСѓС‚СЊ" =================================================================
 
 bool Path::operator==(const Path& Object) const
 {
@@ -1161,13 +1202,28 @@ Path::Path()
 
 Path::~Path()
 {
-	length = 0;
-	path_rules.clear();
-	path_words.clear();
-	word.clear();
+	clear();
 }
 
-//=============== Применение правила к слову ===============================================================
+void Path::clear()
+{
+	length = 0;
+	for (Rule& r : path_rules)
+		r.clear();
+	path_rules.clear();
+	path_rules.shrink_to_fit();
+
+	for (std::vector<std::string> v : path_words)
+	{
+		v.clear(); v.shrink_to_fit();
+	}
+	path_words.clear();
+	path_words.shrink_to_fit();
+	word.clear();
+	word.shrink_to_fit();
+}
+
+//=============== РџСЂРёРјРµРЅРµРЅРёРµ РїСЂР°РІРёР»Р° Рє СЃР»РѕРІСѓ ===============================================================
 std::vector<std::string> ApplyRule(const std::vector<std::string>& String, const Rule& Rule, int Non_Terminal_Number)
 {
 	std::vector<std::string> result = String;
@@ -1178,14 +1234,14 @@ std::vector<std::string> ApplyRule(const std::vector<std::string>& String, const
 	if (Non_Terminal_Number > 0)
 		position = result.begin() + Non_Terminal_Number;
 
-	// Составление строки-замены
+	// РЎРѕСЃС‚Р°РІР»РµРЅРёРµ СЃС‚СЂРѕРєРё-Р·Р°РјРµРЅС‹
 	for (std::string i_string : Rule.right_part)
 	{
 		if (i_string != "[EPS]")
 			replace_string.push_back(i_string);
 	}
 
-	// Вставка строки-замены на место нетерминала
+	// Р’СЃС‚Р°РІРєР° СЃС‚СЂРѕРєРё-Р·Р°РјРµРЅС‹ РЅР° РјРµСЃС‚Рѕ РЅРµС‚РµСЂРјРёРЅР°Р»Р°
 	position = result.erase(position);
 	for (std::string i_string : replace_string)
 	{
@@ -1196,7 +1252,7 @@ std::vector<std::string> ApplyRule(const std::vector<std::string>& String, const
 	return result;
 }
 
-//=============== Совмещение двух наборов правил ===========================================================
+//=============== РЎРѕРІРјРµС‰РµРЅРёРµ РґРІСѓС… РЅР°Р±РѕСЂРѕРІ РїСЂР°РІРёР» ===========================================================
 std::map<std::string, std::vector<Path>> PathConvergence(const std::map<std::string, std::vector<Path>>& First_Object, const std::map<std::string, std::vector<Path>>& Second_Object)
 {
 	std::map<std::string, std::vector<Path>> result = First_Object;
@@ -1213,7 +1269,7 @@ std::map<std::string, std::vector<Path>> PathConvergence(const std::map<std::str
 	return result;
 }
 
-//=============== Содержится ли строка в векторе ===========================================================
+//=============== РЎРѕРґРµСЂР¶РёС‚СЃСЏ Р»Рё СЃС‚СЂРѕРєР° РІ РІРµРєС‚РѕСЂРµ ===========================================================
 bool VecContStr(const std::vector<std::string>& Vector, const std::string& String)
 {
 	if (std::ranges::find(Vector.begin(), Vector.end(), String) != Vector.end())
@@ -1221,7 +1277,7 @@ bool VecContStr(const std::vector<std::string>& Vector, const std::string& Strin
 	return false;
 }
 
-//=============== Генерация и проверка слов двух грамматик =================================================
+//=============== Р“РµРЅРµСЂР°С†РёСЏ Рё РїСЂРѕРІРµСЂРєР° СЃР»РѕРІ РґРІСѓС… РіСЂР°РјРјР°С‚РёРє =================================================
 void EquivalenceTest(const CF_Grammar& Grammar1, const CF_Grammar& Grammar2, int Words_Lenght)
 {
 	CF_Grammar grammar1 = Grammar1;
@@ -1239,7 +1295,7 @@ void EquivalenceTest(const CF_Grammar& Grammar1, const CF_Grammar& Grammar2, int
 	Timer timer;
 	timer.reset();
 
-	// Генерируем слова в первой грамматике и проверяем их выводимость во второй
+	// Р“РµРЅРµСЂРёСЂСѓРµРј СЃР»РѕРІР° РІ РїРµСЂРІРѕР№ РіСЂР°РјРјР°С‚РёРєРµ Рё РїСЂРѕРІРµСЂСЏРµРј РёС… РІС‹РІРѕРґРёРјРѕСЃС‚СЊ РІРѕ РІС‚РѕСЂРѕР№
 	while (number_of_words < 1001)
 	{
 		std::cout << std::endl << "Generating " << number_of_words << " words in 1 grammar..." << std::endl;
@@ -1282,7 +1338,7 @@ void EquivalenceTest(const CF_Grammar& Grammar1, const CF_Grammar& Grammar2, int
 	std::cout << "Generation and checking took: " << timer.elapsed() << std::endl;
 	timer.reset();
 
-	// Генерируем слова во второй грамматике и проверяем их выводимость в первой
+	// Р“РµРЅРµСЂРёСЂСѓРµРј СЃР»РѕРІР° РІРѕ РІС‚РѕСЂРѕР№ РіСЂР°РјРјР°С‚РёРєРµ Рё РїСЂРѕРІРµСЂСЏРµРј РёС… РІС‹РІРѕРґРёРјРѕСЃС‚СЊ РІ РїРµСЂРІРѕР№
 	while (number_of_words < 1001)
 	{
 		std::cout << std::endl << "Generating " << number_of_words << " words in 2 grammar..." << std::endl;
@@ -1321,4 +1377,24 @@ void EquivalenceTest(const CF_Grammar& Grammar1, const CF_Grammar& Grammar2, int
 	std::cout << std::endl;
 	std::cout << "Grammar 2 can replicate " << grammar1_in_grammar2 << "% of grammar 1 words" << std::endl;
 	std::cout << "Grammar 1 can replicate " << grammar2_in_grammar1 << "% of grammar 2 words" << std::endl;
+}
+
+
+PathPermutations::~PathPermutations()
+{
+	clear();
+}
+
+void PathPermutations::clear()
+{
+	rule.clear();
+	for (std::pair<std::string, std::vector<std::string>>& pair : right_part)
+	{
+		pair.first.clear();
+		pair.first.shrink_to_fit();
+		pair.second.clear();
+		pair.second.shrink_to_fit();
+	}
+	right_part.clear();
+	right_part.shrink_to_fit();
 }
